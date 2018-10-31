@@ -1,0 +1,75 @@
+.player {
+    width: 25% !important;
+    min-height: 64px;
+    max-height: 64px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(0, 0, 0, 0.75);
+    -webkit-border-radius: 8px;
+    -moz-border-radius: 8px;
+    border-radius: 8px;
+    padding: 4px;
+    margin-top: 8px;
+    -webkit-box-shadow: 0 0 10px #000;
+    -moz-box-shadow: 0 0 10px #000;
+    box-shadow: 0 0 10px #000;
+}
+
+.inizio {
+    box-shadow: 0 0 10px #bd2130;
+}
+
+.terreno {
+    position: relative;
+    width: 45% !important;
+    min-height: 350px;
+    background: rgba(0, 128, 0, 0.25);
+    border: 2px solid rgba(128, 128, 128, 0.25);
+    -webkit-border-radius: 16px;
+    -moz-border-radius: 16px;
+    border-radius: 16px;
+    margin: 8px;
+    -webkit-box-shadow: 0 0 10px #000, inset 0 0 10px #000;
+    -moz-box-shadow: 0 0 10px #000, inset 0 0 10px #000;
+    box-shadow: 0 0 10px #000, inset 0 0 10px #000;
+}
+
+.terreno-riga {
+    position: absolute;
+    width: 100%;
+    left: 0;
+    max-width: 100%;
+    padding: 0.25rem;
+}
+
+.riga-top {
+    top: 0;
+}
+
+.riga-bottom {
+    bottom: 0;
+}
+/*
+.carta-terreno {
+    width: 81px;
+    height: 129px;
+    background: rgba(255, 255, 255, 0.5);
+    border-top: 1px double rgba(0, 0, 0, 0.8);
+    border-bottom: 1px double rgba(0, 0, 0, 0.8);
+    border-radius: 0.5rem;
+}
+*/
+.zoom {
+    -webkit-transform: scale(1);
+    -moz-transform: scale(1);
+    -ms-transform: scale(1);
+    -o-transform: scale(1);
+    transform: scale(1);
+}
+
+.zoom:hover {
+    -webkit-transform: scale(1.5);
+    -moz-transform: scale(1.5);
+    -ms-transform: scale(1.5);
+    -o-transform: scale(1.5);
+    transform: scale(1.5);
+}

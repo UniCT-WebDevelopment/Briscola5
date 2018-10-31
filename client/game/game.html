@@ -1,0 +1,171 @@
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-2"></div>
+        <div class="col-8" id="game-status"></div>
+        <div class="col-2"></div>
+    </div>
+    <div class="row">
+        <div class="col-10">
+            <div class="d-flex flex-row justify-content-around">
+                <div class="player" id="player2"></div>
+                <div class="player" id="player1"></div>
+            </div>
+            <div class="d-flex flex-row justify-content-around align-items-center">
+                <div class="player" id="player3"></div>
+                <div class="terreno" id="terreno">
+
+                    <div class="d-flex justify-content-around align-items-center terreno-riga riga-top">
+                        <div class="carta-terreno" id="terreno2"></div>
+                        <div class="carta-terreno" id="terreno1"></div>
+
+                    </div>
+                    <div class="d-flex justify-content-around align-items-center terreno-riga riga-bottom">
+                        <div>
+                            <div class="carta-terreno" id="terreno3"></div>
+                            <br>
+                            <br>
+                        </div>
+                        <div class="carta-terreno" id="terreno4"></div>
+                        <div>
+                            <div class="carta-terreno" id="terreno0"></div>
+                            <br>
+                            <br>
+                        </div>
+
+                    </div>
+
+                </div>
+                <div class="player" id="player0"></div>
+            </div>
+            <div class="d-flex flex-row justify-content-around">
+                <div class="player" id="player4">Tu</div>
+            </div>
+            <div class="d-flex flex-row justify-content-around">
+                <div class="col-2"></div>
+                <div class="col-9" id="mie-carte"></div>
+                <div class="col-1"></div>
+            </div>
+        </div>
+        <div class="col-2 position-relative">
+            <p>Carta Chiamata:</p>
+            <div id="carta-chiamata"></div>
+            <div id="myModal" class="modal">
+
+                <!-- Modal content -->
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <p>Scegli il valore della chiamata</p>
+                    <input id='chiamata-input' type="number" min="81" max="118" value="81"/>
+                    <button id='chiamata-conferma' onclick='game.inviaChiamata()'>Conferma</button>
+                    <button id='chiamata-passa' onclick='game.passaChiamata()'>Passa</button>
+                </div>
+            </div>
+            <div id="output"></div>
+
+        </div>
+
+    </div>
+    <div id="chiamaCartaModal" class="modal">
+        <!-- Modal content -->
+        <div class="chiama-carta-modal-content">
+            <span class="close">&times;</span>
+            <p>Scegli carta</p>
+            <div id="chiamaCarta"></div>
+        </div>
+    </div>
+
+    <div id="disconnessioneModal" class="modal">
+        <!-- Modal content -->
+        <div class="disconnessione-modal-content">
+            <span class="close">&times;</span>
+            <h1 style="color: #9fcdff; align-content: center">Un giocatore si è disconnesso! Timeout prima del termine della partita</h1>
+            <br><br>
+            <!--  <div class="myBar" id="myBar">30s</div>
+
+              <div class="husky">
+                  <div class="mane">
+                      <div class="coat"></div>
+                  </div>
+                  <div class="bodyh">
+                      <div class="head">
+                          <div class="ear"></div>
+                          <div class="ear"></div>
+                          <div class="face">
+                              <div class="eye"></div>
+                              <div class="eye"></div>
+                              <div class="nose"></div>
+                              <div class="mouth">
+                                  <div class="lips"></div>
+                                  <div class="tongue"></div>
+                              </div>
+                          </div>
+                      </div>
+                      <div class="torso"></div>
+                  </div>
+                  <div class="legs">
+                      <div class="front-legs">
+                          <div class="leg"></div>
+                          <div class="leg"></div>
+                      </div>
+                      <div class="hind-leg">
+                      </div>
+                  </div>
+                  <div class="tail">
+                      <div class="tail">
+                          <div class="tail">
+                              <div class="tail">
+                                  <div class="tail">
+                                      <div class="tail">
+                                          <div class="tail"></div>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+
+              <svg xmlns="http://www.w3.org/2000/svg" version="1.1" style="display:none">
+                  <defs>
+
+
+                      <filter id="squiggly-0">
+                          <feTurbulence id="turbulence" baseFrequency="0.02" numOctaves="3" result="noise" seed="0"/>
+                          <feDisplacementMap id="displacement" in="SourceGraphic" in2="noise" scale="2"/>
+                      </filter>
+                      <filter id="squiggly-1">
+                          <feTurbulence id="turbulence" baseFrequency="0.02" numOctaves="3" result="noise" seed="1"/>
+                          <feDisplacementMap in="SourceGraphic" in2="noise" scale="3"/>
+                      </filter>
+
+                      <filter id="squiggly-2">
+                          <feTurbulence id="turbulence" baseFrequency="0.02" numOctaves="3" result="noise" seed="2"/>
+                          <feDisplacementMap in="SourceGraphic" in2="noise" scale="2"/>
+                      </filter>
+                      <filter id="squiggly-3">
+                          <feTurbulence id="turbulence" baseFrequency="0.02" numOctaves="3" result="noise" seed="3"/>
+                          <feDisplacementMap in="SourceGraphic" in2="noise" scale="3"/>
+                      </filter>
+
+                      <filter id="squiggly-4">
+                          <feTurbulence id="turbulence" baseFrequency="0.02" numOctaves="3" result="noise" seed="4"/>
+                          <feDisplacementMap in="SourceGraphic" in2="noise" scale="1"/>
+                      </filter>
+                  </defs>
+              </svg> -->
+            <img id="load" src="../assets/images/giphy.gif">
+        </div>
+    </div>
+
+    <div id="gameoverModal" class="modal">
+        <!-- Modal content -->
+        <div class="game-over-modal-content">
+            <span class="outline end-right" id="match-result"></span>
+            <span class="outline end-left">HAI</span>
+            <audio src="../assets/sounds/nsmb_death.wav" id="lose"></audio>
+            <audio src="../assets/sounds/nsmb_coin.wav" id="win"></audio>
+            <audio src="../assets/sounds/" id="level-up"></audio>
+        </div>
+    </div>
+
+</div>

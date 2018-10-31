@@ -1,0 +1,66 @@
+<!--
+ * La pagina per la Lobby.
+ * Qui vengono mostrate le stanze attive, i giocatori all'interno della stanza e il pulsante di creazione
+ * di una nuova stanza.
+ -->
+
+
+<nav class="navbar navbar-expand-lg navbar-light bg-custom-primary">
+    <a class="navbar-brand" href="#">
+        <img src="../assets/images/logo.png" width="60" height="30" alt="Bri5cola">
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown"
+                   aria-haspopup="true" aria-expanded="false">
+                    Dropdown
+                </a>
+                <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                    <p class="dropdown-item" id="dropdown-user-level">Action</p>
+                    <p class="dropdown-item" id="dropdown-user-score">Another action</p>
+                    <p class="dropdown-item" id="dropdown-user-winloserate">Another action</p>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="#">Logout</a>
+                </div>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="d-flex flex-row m-2">
+        <div class="form-group m-2">
+            <label for="room-name" class="badge">Nome Stanza</label>
+            <input type="text" class="form-control" id="room-name">
+        </div>
+        <div class="form-group m-2 custom-switch custom-switch-label-yesno">
+            <label for="room-giro" class="badge">Giro morto?</label> <br>
+            <input type="checkbox" class="custom-switch-input" id="room-giro">
+            <label class="custom-switch-btn" for="room-giro"></label>
+
+        </div>
+        <div class="form-group m-2">
+            <label for="room-card-type" class="badge">Tipo mazzo</label>
+            <select name="card-type" class="form-control" id="room-card-type">
+                <option value="siciliane">Siciliane</option>
+                <option value="napoletane">Napoletane</option>
+            </select>
+        </div>
+        <br>
+    </div>
+    <div class="form-group m-2">
+        <button class="btn btn-login" onclick="lobby.createRoom()">Invia</button>
+    </div>
+
+    <hr>
+    <div class="rooms-area" id="rooms-area">
+    </div>
+
+</div>
+
