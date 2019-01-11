@@ -3,63 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <title>Bri5cola</title>
+    <link rel="shortcut icon" href="./assets/images/icona1.png" type="image/x-icon"/>
     <script src="js/lib/jquery-3.3.1.js"></script>
+    <script src="js/lib/popper.min.js"></script>
     <script src="js/lib/bootstrap.js"></script>
     <script src="js/lib/jquery.velocity.min.js"></script>
     <script src="js/lib/socket.io.js"></script>
-    <script>
-        var socket = io('http://localhost:3000');
-    </script>
-    <script src="js/socket-manager.js"></script>
-    <link rel="stylesheet" href="css/bootstrap.css">
-    <link rel="stylesheet" href="css/component-custom-switch.min.css">
+    <script src="js/socket-config.js"></script>
+    <script src="js/request-manager.js"></script>
+    <link rel="stylesheet" href="css/lib/bootstrap.css">
+    <link rel="stylesheet" href="css/lib/component-custom-switch.min.css">
     <link rel="stylesheet" href="css/style.css">
     <script src="js/lobby-manager.js"></script>
     <script src="js/game-manager.js"></script>
+    <script src="js/chat-lobby.js"></script>
 </head>
 <body>
 
 <div id="app-container">
-    <div class="container">
-        <div class="image-logo">
-            <img src="assets/images/logo.png" id="img-logo">
-        </div>
-        <div id="alert-output"></div>
-        <br/>
-        <div class="auth-area">
-            <div class="auth-card">
-                <p>Login</p>
-                <input type="text" class="form-control" id="username" name="username" placeholder="Username"
-                       required>
-                <input type="password" class="form-control" id="password" name="password" placeholder="Password"
-                       required>
-                <hr/>
-                <button type="submit" class="btn btn-login" onclick="sendToServer.loginUser()" title="Login">
-                    Login
-                </button>
+        <img src="assets/images/home-bg.jpg" class="home-bg">
+        <div class="container">
+            <div class="image-logo">
+                <img src="assets/images/logo.png" id="img-logo">
             </div>
-            <div class="auth-card">
-                <p>Registrati</p>
-                <input type="text" class="form-control" id="r_username" name="username" placeholder="Username"
-                       maxlength="16" required>
-                <input type="password" class="form-control" id="r_password" name="password"
-                       placeholder="Password"
-                       maxlength="8" required>
-                <hr/>
-                <button type="submit" class="btn btn-login" onclick="sendToServer.registerUser()">Registrati</button>
+            <div id="alert-output"></div>
+            <br/>
+            <div class="auth-area">
+                <div class="auth-card">
+                    <p>Login</p>
+                    <input type="text" class="form-control" id="username" name="username" placeholder="Username"
+                           required>
+                    <input type="password" class="form-control" id="password" name="password" placeholder="Password"
+                           required>
+                    <hr/>
+                    <button type="submit" class="btn btn-block btn-login" onclick="sendToServer.loginUser()"
+                            title="Login">
+                        Login
+                    </button>
+                </div>
+                <div class="auth-card">
+                    <p>Sign in</p>
+                    <input type="text" class="form-control" id="r_username" name="username" placeholder="Username"
+                           maxlength="16" required>
+                    <input type="password" class="form-control" id="r_password" name="password"
+                           placeholder="Password"
+                           maxlength="8" required>
+                    <hr/>
+                    <button type="submit" class="btn btn-login" onclick="sendToServer.registerUser()">Sign in
+                    </button>
 
+                </div>
             </div>
+            <br>
         </div>
-        <br>
-
-    </div>
 </div>
-
-
-<script>
-    //$('#app-container').load('game/game.html', () => {    });
-</script>
-
 
 <footer class="footer">
     <p>Ismaele Benbachir - X81000345</p>

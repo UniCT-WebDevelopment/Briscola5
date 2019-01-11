@@ -1,3 +1,12 @@
+/**
+ * @since 1.0.0
+ * @author Ismaele Benbachir
+ **/
+
+/**
+ * @type {HTMLElement}
+ */
+
 let modal = document.getElementById('myModal'),
     btn = document.getElementById("myBtn"),
     span = document.getElementsByClassName("close")[0];
@@ -9,7 +18,6 @@ class GameManager {
         this.state = {
             room: {}
         };
-
         this._img = new Image();
     }
 
@@ -18,13 +26,17 @@ class GameManager {
         this.render();
     }
 
-    init(data) {
+    init() {
         socket.emit('request-game-state', window.registeredRoom);
     }
 
-    render_Carte(target, carta, w, h, onclick = null, zoom = true) {
-        console.log(target)
+    distructor(socket) {
+        game = new GameManager(socket);
+    }
+
+    render_Cards(target, carta, w, h, onclick = null, zoom = true) {
         let cartaImg = document.createElement('canvas');
+        cartaImg.classList.add("canv");
         cartaImg.width = w;
         cartaImg.height = h;
         cartaImg.onclick = onclick;
@@ -40,38 +52,50 @@ class GameManager {
 
     }
 
-    render_GameStatus() {
-        let room = this.state.room;
+    async render_GameStatus() {
+        //   let room = this.state.room;
+        let room = await localStorage.getItem('roomData');
+        room = JSON.parse(room);
         let target = document.getElementById('game-status'),
             html = '';
         let id = room._chiamante;
         if (room._gamePhase !== 'disconnessione') {
-            document.getElementById('disconnessioneModal').style.display = "none";
+            document.getElementById('discModal').style.display = "none";
         }
         switch (room._gamePhase) {
             case 'idle':
-                html = '<h5>In attesa di giocatori...</h5>';
+                html = '<h5><center>Waiting players...</center></h5>';
                 break;
             case 'chiamata':
+                html = '<h5><center>Call Phase</center></h5>';
                 if (room._playerInside[id].player.username === window.user.username) {
-                    document.getElementById('chiamata-input').value = this.state.room._chiamata.punti + 1;
+                    document.getElementById('calling-input').value = this.state.room._chiamata.punti + 1;
                     document.getElementById('myModal').style.display = "block";
                 }
                 break;
             case 'scegliCarta':
+                html = '<h5><center>Card Call Phase</center></h5>';
                 if (room._playerInside[id].player.username === window.user.username) {
-                    document.getElementById('chiamaCartaModal').style.display = "block";
+                    document.getElementById('callCardModal').style.display = "block";
+                    if (room._rules.giro === true) {
+                        document.getElementById('cardsT').style.display = "block";
+                    }
                     let scegliCartaDiv = document.createElement('div');
-                    scegliCartaDiv.setAttribute("id", "scegli");
+                    scegliCartaDiv.setAttribute("id", "scegli"); //TODO controllare se scegli serve o meno
                     for (let c = 0; c < 40; c++) {
                         let cartaImg = document.createElement('canvas');
                         cartaImg.className = "zoom";
                         cartaImg.onclick = () => {
-                            socket.emit('cartaCompagno', {
-                                roomId: room._id,
-                                carta: c
-                            });
-                            document.getElementById('chiamaCartaModal').style.display = "none";
+                            if (room._carteTavolo.indexOf(c) > -1) {
+                                alert("You can not select that card");
+                            } else {
+                                socket.emit('cardMate', {
+                                    roomId: room._id,
+                                    carta: c
+                                });
+                                document.getElementById('callCardModal').style.display = "none";
+                                document.getElementById('cardsT').style.display = "none";
+                            }
                         };
                         cartaImg.width = 102;
                         cartaImg.height = 162;
@@ -83,21 +107,61 @@ class GameManager {
                         ctx.drawImage(this._img, x, y, w, h, 0, 0, w, h);
                         scegliCartaDiv.appendChild(cartaImg);
                     }
-                    document.getElementById('chiamaCarta').appendChild(scegliCartaDiv);
+                    document.getElementById('callCard').appendChild(scegliCartaDiv);
                 }
                 break;
             case 'giroMorto':
-                html = 'Giro Morto!';
+                html = '<h5><center>"Giro Morto!"</center></h5>';
+                let valor = 0;
+                for (let i = 0; i < room._playerInside.length; i++) {
+                    let user = room._playerInside[i].player;
+                    document.getElementById('table' + i).innerHTML = "&nbsp;";
+                    if (user.username === window.user.username) {
+                        valor = i;
+                    }
+                }
+                let man = room._giocatorePrimo;
+                for (let i = 0; i < room._carteTavolo.length; i++) {
+                    let carta = room._carteTavolo[i];
+                    let ap = (4 - valor + i + man) % 5;
+                    this.render_Cards('table' + ap, carta, 81, 129);
+                }
+                document.getElementById('winnerRound').innerHTML = "Start from: ";
+                let giocatore = room._playerInside[0].player.username;
+                let node = document.createElement("LI");
+                let textnode = document.createTextNode(giocatore);
+                node.appendChild(textnode);
+                document.getElementById('winnerRound').appendChild(node);
+                document.getElementById('currentPlayer').innerHTML = "It's up to: ";
+                let giocat = room._playerInside[room._hand].player.username;
+                let nodo = document.createElement("LI");
+                let textnodo = document.createTextNode(giocat);
+                nodo.appendChild(textnodo);
+                document.getElementById('currentPlayer').appendChild(nodo);
+                document.getElementById('caller-right').innerHTML = "From: ";
+                let nume = room._chiamante;
+                let chiamat = room._playerInside[nume].player.username;
+                let na = document.createElement("LI");
+                let texte = document.createTextNode(chiamat);
+                na.appendChild(texte);
+                document.getElementById('caller-right').appendChild(na);
+                document.getElementById('points').innerHTML = "Points: ";
+                let punta = room._chiamata.punti;
+                console.log(punta);
+                let nia = document.createElement("LI");
+                let texe = document.createTextNode(punta);
+                nia.appendChild(texe);
+                document.getElementById('points').appendChild(nia);
                 break;
             case 'gioco':
-                html = 'Si Gioca';
+                html = '<h5><center>Si Gioca</center></h5>';
                 let carta = room._cartaChiamata;
-                document.getElementById('carta-chiamata').innerHTML = "";
-                this.render_Carte('carta-chiamata', carta, 102, 162, null, false);
+                document.getElementById('card-called').innerHTML = "";
+                this.render_Cards('card-called', carta, 102, 162, null, false);
                 let valore = 0;
                 for (let i = 0; i < room._playerInside.length; i++) {
                     let user = room._playerInside[i].player;
-                    document.getElementById('terreno' + i).innerHTML = "";
+                    document.getElementById('table' + i).innerHTML = "&nbsp;";
                     if (user.username === window.user.username) {
                         valore = i;
                     }
@@ -106,9 +170,41 @@ class GameManager {
                 for (let i = 0; i < room._carteTavolo.length; i++) {
                     let carta = room._carteTavolo[i];
                     let ap = (4 - valore + i + mano) % 5;
-                    this.render_Carte('terreno' + ap, carta, 81, 129);
-                    console.log("Mano :" + mano);
-                    console.log("Giocatore Primo: " + room._giocatorePrimo);
+                    this.render_Cards('table' + ap, carta, 81, 129);
+                }
+                document.getElementById('currentPlayer').innerHTML = "";
+                document.getElementById('currentPlayer').innerHTML = "It's up to: ";
+                let gioca = room._playerInside[room._hand].player.username;
+                let nod = document.createElement("LI");
+                let textnod = document.createTextNode(gioca);
+                nod.appendChild(textnod);
+                document.getElementById('currentPlayer').appendChild(nod);
+                if (room._giro === 0) {
+                    document.getElementById('winnerRound').innerHTML = "";
+                    document.getElementById('winnerRound').innerHTML = "Start from: ";
+                    let giocatore = room._playerInside[0].player.username;
+                    let node = document.createElement("LI");
+                    let textnode = document.createTextNode(giocatore);
+                    node.appendChild(textnode);
+                    document.getElementById('winnerRound').appendChild(node);
+                }
+                else {
+                    document.getElementById('winnerRound').innerHTML = "";
+                    //Hand means who takes turn
+                    document.getElementById('winnerRound').innerHTML = "Hand: ";
+                    let vincitore = room._playerInside[room._giocatorePrimo].player.username;
+                    let node = document.createElement("LI");
+                    let textnode = document.createTextNode(vincitore);
+                    node.appendChild(textnode);
+                    document.getElementById('winnerRound').appendChild(node);
+                }
+                if (room._punteggio !== 0) {
+                    document.getElementById('winnerRound').innerHTML = "Caller and companion score: ";
+                    let punteggio = room._punteggio;
+                    let node = document.createElement("LI");
+                    let textnode = document.createTextNode(punteggio);
+                    node.appendChild(textnode);
+                    document.getElementById('winnerRound').appendChild(node);
                 }
                 break;
             case 'disconnessione':
@@ -116,11 +212,101 @@ class GameManager {
                 break;
             case 'chiusura':
                 document.getElementById('gameoverModal').style.display = "block";
-                document.getElementById('match-result').innerText = room._risultato.indexOf(window.user.username) > -1 ? "VINTO!" : "PERSO!";
-                $('.end-right').css('left', '-10%');
-                $('.end-left').css('left', '110%');
-                $('.end-right').velocity({left: '45%'}, 'easeOutExpo', 1200);
-                $('.end-left').velocity({left: '52%'}, 'easeOutExpo', 1200);
+                document.getElementById('match-result').innerText = room._risultato.indexOf(window.user.username) > -1 ? "WON!" : "LOST!";
+                //TODO sistemare la distanza delle scritte
+                document.getElementById('match-result').style.left = '-10%';
+                document.getElementById('you-result').style.left = '110%';
+                document.getElementById('match-result').velocity({left: '50%'}, 'easeOutExpo', 1200);
+                document.getElementById('you-result').velocity({left: '55%'}, 'easeOutExpo', 1200);
+
+                let index = room._risultato.length,
+                    compagno = room._compagno,
+                    chiamante = room._chiamante;
+                let tmp = [];
+                let players = room._playerInside;
+                if (index !== 0) {
+                    for (let i = 0; i < 5; i++) {
+                        if (i !== chiamante && i !== compagno) {
+                            tmp.push(players[i].player.username);
+                        }
+                    }
+                }
+
+                document.getElementById('caller').innerHTML = "";
+                document.getElementById('caller-mate').innerHTML = "";
+                document.getElementById('first').innerHTML = "";
+                document.getElementById('second').innerHTML = "";
+                document.getElementById('third').innerHTML = "";
+                document.getElementById('duo-points').innerHTML = "";
+                document.getElementById('trio-points').innerHTML = "";
+
+                //TODO aggiungere il controllo per l attivazione solo in caso di fine partita oppure vedere
+                if (index === 2) {
+                    document.getElementById('trio').style.color = 'red';
+                    let ni = document.createElement("I");
+                    let tex = document.createTextNode(room._risultato[0]);
+                    ni.appendChild(tex);
+                    document.getElementById('caller').appendChild(ni);
+                    tex = document.createTextNode(room._risultato[1]);
+                    let nni = document.createElement("I");
+                    nni.appendChild(tex);
+                    document.getElementById('caller-mate').appendChild(nni);
+                    let nii = document.createElement("I");
+                    tex = document.createTextNode(tmp[0]);
+                    nii.appendChild(tex);
+                    document.getElementById('first').appendChild(nii);
+                    tex = document.createTextNode(tmp[1]);
+                    let nui = document.createElement("I");
+                    nui.appendChild(tex);
+                    document.getElementById('second').appendChild(nui);
+                    tex = document.createTextNode(tmp[2]);
+                    let nai = document.createElement("I");
+                    nai.appendChild(tex);
+                    document.getElementById('third').appendChild(nai);
+                } else if (index === 3) {
+                    document.getElementById('duo').style.color = 'red';
+                    let ni = document.createElement("I");
+                    let tex = document.createTextNode(room._risultato[0]);
+                    ni.appendChild(tex);
+                    document.getElementById('first').appendChild(ni);
+                    let nni = document.createElement("I");
+                    tex = document.createTextNode(room._risultato[1]);
+                    nni.appendChild(tex);
+                    document.getElementById('second').appendChild(nni);
+                    tex = document.createTextNode(room._risultato[2]);
+                    let mi = document.createElement("I");
+                    mi.appendChild(tex);
+                    document.getElementById('third').appendChild(mi);
+                    let mmi = document.createElement("I");
+                    tex = document.createTextNode(tmp[0]);
+                    mmi.appendChild(tex);
+                    document.getElementById('caller').appendChild(mmi);
+                    let vi = document.createElement("I");
+                    tex = document.createTextNode(tmp[1]);
+                    vi.appendChild(tex);
+                    document.getElementById('caller-mate').appendChild(vi);
+                } else {
+                    document.getElementById('duo').style.color = 'red';
+                    document.getElementById('trio').style.color = 'red';
+                    let ni = document.createElement("I");
+                    let tex = document.createTextNode(room._risultato[0]);
+                    ni.appendChild(tex);
+                    document.getElementById('caller').appendChild(ni);
+                    tex = document.createTextNode(room._risultato[1]);
+                    ni.appendChild(tex);
+                    document.getElementById('caller-mate').appendChild(ni);
+                }
+                let punteggio = 120 - room._punteggio;
+                let ni = document.createElement('I');
+                let tex = document.createTextNode(room._punteggio);
+                ni.appendChild(tex);
+                document.getElementById('duo-points').appendChild(ni);
+                let no = document.createElement("I");
+                tex = document.createTextNode((punteggio));
+                no.appendChild(tex);
+                document.getElementById('trio-points').appendChild(no);
+
+
                 if (room._risultato.indexOf(window.user.username) > -1) {
                     if (room._levelup.indexOf(window.user.username) > -1) {
                         document.getElementById('level-up').play();
@@ -131,9 +317,22 @@ class GameManager {
                     document.getElementById('lose').play();
                 }
                 setTimeout(() => {
+
+                    let url = "http://localhost:3000/request-room-modify";
+
+                    let xhr = new XMLHttpRequest();
+                    xhr.open("get", url, true);
+                    xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
+                    xhr.onload = function () {
+                    };
+                    xhr.send();
+
                     document.getElementById('gameoverModal').style.display = "none";
+                    //changeView('lobby-screen');
                     socket.emit('return-lobby', window.user.username);
-                }, 5000);
+                    game.distructor(this.socket);
+
+                }, 5555000);
                 break;
             default:
                 break;
@@ -141,101 +340,192 @@ class GameManager {
         target.innerHTML = html;
     }
 
-
-    render() {
-        let room = this.state.room;
+    async render() {
+        this.render_GameStatus();
+        // let room = this.state.room;
+        let room = await localStorage.getItem('roomData');
+        room = JSON.parse(room);
         if (room._rules.carte === 'siciliane') {
             this._img.src = 'assets/images/carte_sic.png';
         } else {
             this._img.src = 'assets/images/carte.png';
         }
-        console.log(room);
-        this._img.onload = () => {
-            this.render_GameStatus();
-            let valore = 0;
-            for (let i = 0; i < room._playerInside.length; i++) {
-                let user = room._playerInside[i].player;
-                if (user.username === window.user.username) {
-                    valore = i;
-                }
+
+        let valore = 0;
+        for (let i = 0; i < room._playerInside.length; i++) {
+            let user = room._playerInside[i].player;
+
+
+            if (user.username === window.user.username) {
+                valore = i;
             }
-            let mano = room._giocatorePrimo;
-            let val = (4 - valore + mano) % 5;
-            for (let i = 0; i < room._playerInside.length; i++) {
-                let ci = document.getElementById('player' + i);
-                ci.classList.remove("inizio");
+        }
+        let call = room._chiamante;
+
+        let mano = room._giocatorePrimo;
+        let val = (4 - valore + mano) % 5;
+        let caller = (4 - valore + call) % 5;
+        let turno = room._hand;
+        let valturno = (4 - valore + turno) % 5;
+        if (room._gamePhase !== 'idle' && room._gamePhase !== 'chiamata') {
+            document.getElementById('cop' + caller).style.display = 'block';
+        }
+        if (room._gamePhase !== 'idle') {
+            document.getElementById('caller-right').innerHTML = "";
+            document.getElementById('caller-right').innerHTML = "From: ";
+            let nom = room._nome;
+            let n = document.createElement("LI");
+            let text = document.createTextNode(nom);
+            n.appendChild(text);
+            document.getElementById('caller-right').appendChild(n);
+            document.getElementById('points').innerHTML = "";
+            document.getElementById('points').innerHTML = "Points: ";
+            let punt = room._chiamata.points;
+            if (punt !== 80) {
+                let ni = document.createElement("LI");
+                let tex = document.createTextNode(punt);
+                ni.appendChild(tex);
+                document.getElementById('points').appendChild(ni);
             }
-            for (let i = 0; i < room._playerInside.length; i++) {
-                document.getElementById('player' + i).innerHTML = '';
-                let pii = i + 1;
-                let pi = (pii + valore) % 5;
-                let ci = document.getElementById('player' + val);
-                ci.classList.remove("inizio");
-                ci.classList.add("inizio");
-                let cardsLength = room._playerInside[valore].cards.length;
-                let user = room._playerInside[pi].player;
-                let username = user.username;
-                let node = document.createElement("LI");
-                let textnode = document.createTextNode(username);
-                node.appendChild(textnode);
-                document.getElementById('player' + i).appendChild(node);
+        }
+        for (let i = 0; i < room._playerInside.length; i++) {
+            let ci = document.getElementById('player' + i);
+            let c = document.getElementById('player' + i);
+            c.classList.remove("round");
+            ci.classList.remove("start");
+        }
+        for (let i = 0; i < room._playerInside.length; i++) {
+            document.getElementById('player' + i).innerHTML = '';
+            let pii = i + 1;
+            let pi = (pii + valore) % 5;
+            let ci = document.getElementById('player' + val);
+            ci.classList.remove("start");
+            ci.classList.add("start");
+            let ct = document.getElementById('player' + valturno);
+            ct.classList.remove("round");
+            ct.classList.add("round");
+            let cardsLength = room._playerInside[valore].cards.length;
+            let user = room._playerInside[pi].player;
+            let username = user.username;
+            let node = document.createElement("LI");
+            let textnode = document.createTextNode(username);
+            node.appendChild(textnode);
+            document.getElementById('player' + i).appendChild(node);
+
+            this._img.onload = () => {
+                this.render_GameStatus();
+
                 if (window.user.username === user.username) {
-                    document.getElementById('mie-carte').innerHTML = '';
+                    document.getElementById('my-cards').innerHTML = '';
                     room._playerInside[valore].cards.sort((a, b) => {
                         return a > b ? 1 : -1;
                     })
-                    /* LE MIE CARTE*/
+                    /* My cards */
                     for (let c = 0; c < cardsLength; c++) {
                         let carta = room._playerInside[valore].cards[c];
                         const onclick = () => {
-                            switch (room._gamePhase) {
-                                case 'gioco':
-                                    socket.emit('clickCarta', {
-                                        roomId: room._id,
-                                        carta: carta,
-                                        giocatore: window.user.username
-                                    });
-                                    break;
-                                case 'giroMorto':
-                                    socket.emit('clickCarta', {
-                                        roomId: room._id,
-                                        carta: carta,
-                                        giocatore: window.user.username
-                                    });
-                                    break;
+                                switch (room._gamePhase) {
+                                    case 'gioco':
+                                        socket.emit('clickCard', {
+                                            roomId: room._id,
+                                            carta: carta,
+                                            giocatore: window.user.username
+                                        });
+                                        break;
+                                    case 'giroMorto':
+                                        let punteggio = 0,
+                                            chiamata = room._chiamata.punti,
+                                            massimo = 120 - chiamata,
+                                            carteTav = room._carteTavolo;
+
+                                        if (carta % 10 === 0) {
+                                            punteggio += 11;
+                                        } else if (carta % 10 === 2) {
+                                            punteggio += 10;
+                                        } else if (carta % 10 === 7) {
+                                            punteggio += 2;
+                                        } else if (carta % 10 === 8) {
+                                            punteggio += 3;
+                                        } else if (carta % 10 === 9) {
+                                            punteggio += 4;
+                                        }
+
+                                        for (let i = 0; i < carteTav.length; i++) {
+                                            if (carteTav[i] % 10 === 0) {
+                                                punteggio += 11;
+                                            } else if (carteTav[i] % 10 === 2) {
+                                                punteggio += 10;
+                                            } else if (carteTav[i] % 10 === 7) {
+                                                punteggio += 2;
+                                            } else if (carteTav[i] % 10 === 8) {
+                                                punteggio += 3;
+                                            } else if (carteTav[i] % 10 === 9) {
+                                                punteggio += 4;
+                                            }
+                                        }
+                                        if (punteggio >= massimo) {
+                                            alert("You can not throw the card, already there are 120 points with the call");
+                                        } else {
+                                            socket.emit('clickCard', {
+                                                roomId: room._id,
+                                                carta: carta,
+                                                giocatore: window.user.username
+                                            });
+                                        }
+                                        break;
+                                }
                             }
-                        };
-                        this.render_Carte('mie-carte', carta, 102, 162, onclick);
+                        ;
+                        this.render_Cards('my-cards', carta, 102, 162, onclick);
                     }
                 }
             }
         }
+
     }
 
-    inviaChiamata() {
-        let value = parseInt(document.getElementById('chiamata-input').value);
-
-        console.log(typeof value);
-        console.log(typeof this.state.room._chiamata.punti);
+    sendCall() {
+        let value = parseInt(document.getElementById('calling-input').value);
 
         if (value > this.state.room._chiamata.punti) {
             let data = {
                 id: this.state.room._id,
-                value: value
+                value: value,
+                user: window.user.username
             };
             document.getElementById('myModal').style.display = "none";
-            socket.emit('newChiamataScore', data);
+            socket.emit('newCallScore', data);
         }
     }
 
-    passaChiamata() {
+    giveUp() {
         document.getElementById('myModal').style.display = "none";
-        socket.emit('passaChiamata', this.state.room._id);
+        socket.emit('passTheCall', this.state.room._id);
+    }
+
+    giveUpMatch() {
+        let risultato = confirm("Confirm the abandonment of the game?");
+        if (risultato === true) {
+            socket.emit('give-up', this.state.room._id);
+        }
+    }
+
+    startTimer() {
+        if (this.state.room._gamePhase === 'gioco') {
+            socket.emit('timer', this.state.room._id);
+        } else {
+            alert('It is not a phase of play');
+        }
     }
 }
 
+/**
+ * Useless currently
+ * Bar animation for disconnection
+ */
+
 function move() {
-    document.getElementById('disconnessioneModal').style.display = "block";
+    document.getElementById('discModal').style.display = "block";
     var elem = document.getElementById("myBar");
     var width = 90;
     var w = 30;
@@ -245,7 +535,7 @@ function move() {
         if (width == 0) {
             clearInterval(id);
         } else {
-            width-=3;
+            width -= 3;
             w--;
             elem.style.width = width + '%';
             elem.innerHTML = w * 1 + 's';
@@ -256,7 +546,8 @@ function move() {
 let game = new GameManager(socket);
 
 socket.on('update-game-state', (data) => {
-    console.log(data);
+    localStorage.setItem('roomData', JSON.stringify(data));
     game.setState({room: data});
 });
 
+//TODO sistemare l update della schermata dopo il reload e sistemare le schermate (rimane su waiting players

@@ -31,7 +31,6 @@ class Room {
         this._name = value;
     }
 
-
     get rules() {
         return this._rules;
     }
@@ -54,14 +53,6 @@ class Room {
 
     set playerInside(value) {
         this._playerInside = value;
-    }
-
-    get roomStatus() {
-        return this._roomStatus;
-    }
-
-    set roomStatus(value) {
-        this._roomStatus = value;
     }
 
     get gamePhase() {
@@ -160,20 +151,20 @@ class Room {
         this._disconnesso = value;
     }
 
-    get utentiDisconnessi() {
-        return this._utentiDisconnessi;
-    }
-
-    set utentiDisconnessi(value) {
-        this._utentiDisconnessi = value;
-    }
-
     get time() {
         return this._time;
     }
 
     set time(value) {
         this._time = value;
+    }
+
+    get timerGame() {
+        return this._timerGame;
+    }
+
+    set timerGame(value) {
+        this._timerGame = value;
     }
 
     get risultato() {
@@ -192,6 +183,46 @@ class Room {
         this._levelup = value;
     }
 
+    get punteggio() {
+        return this._punteggio;
+    }
+
+    set punteggio(value) {
+        this._punteggio = value;
+    }
+
+    get abbandono() {
+        return this._abbandono;
+    }
+
+    set abbandono(value) {
+        this._abbandono = value;
+    }
+
+    get nome() {
+        return this._nome;
+    }
+
+    set nome(value) {
+        this._nome = value;
+    }
+
+    get carteTavoloGiroMorto() {
+        return this._carteTavoloGiroMorto;
+    }
+
+    set carteTavoloGiroMorto(value) {
+        this._carteTavoloGiroMorto = value;
+    }
+
+    get chiamataTimer() {
+        return this._chiamataTimer;
+    }
+
+    set chiamataTimer(value) {
+        this._chiamataTimer = value;
+    }
+
     constructor() {
         this._id = Date.now() + Math.floor(Math.random() * 1000000000);
         this._playerInside = [];
@@ -201,16 +232,19 @@ class Room {
         this._rules = {};
         this._name = '';
         this._deck = [];
-        this._chiamante = 0;
+        this._chiamante = -1;
         this._chiamata = {
             punti: 80,
             carta: -1
         };
         this._hand = 0;
+        this._punteggio = 0;
         this._compagno;
         this._disconnesso = [];
-        this._utentiDisconnessi = 0;
+        this._chiamataTimer = 0;
+        this._disc;
         this._time;
+        this._timerGame;
         this._turniDiChiamata = 0;
         this._cartaChiamata = -1;
         this._carteTavolo = [];
@@ -221,9 +255,16 @@ class Room {
             this._deck.push(i);
         }
         this._briscola = -1;
+        this._abbandono = 0;
         this._ordine = [1, 3, 4, 5, 6, 7, 8, 9, 2, 0];
         this._risultato = [];
         this._levelup = [];
+        this._carteTavoloGiroMorto = [];
+        this._nome = "";
+        this._mazzoDiCarte = ["Asso di Coppe","Due di Coppe","Tre di Coppe","Quattro di Coppe","Cinque di Coppe","Sei di Coppe","Sette di Coppe","Donna di Coppe","Cavallo di Coppe","Re di Coppe",
+            "Asso di Oro","Due di Oro","Tre di Oro","Quattro di Oro","Cinque di Oro","Sei di Oro","Sette di Oro","Donna di Oro","Cavallo di Oro","Re di Oro",
+            "Asso di Bastoni","Due di Bastoni","Tre di Bastoni","Quattro di Bastoni","Cinque di Bastoni","Sei di Bastoni","Sette di Bastoni","Donna di Bastoni","Cavallo di Bastoni","Re di Bastoni",
+            "Asso di Spade","Due di Spade","Tre di Spade","Quattro di Spade","Cinque di Spade","Sei di Spade","Sette di Spade","Donna di Spade","Cavallo di Spade","Re di Spade"];
     }
 
 
@@ -256,3 +297,5 @@ class Room {
     }
 
 }
+
+module.exports = Room;

@@ -1,255 +1,27 @@
+/**
+ * @since 1.0.0
+ * @author Ismaele Benbachir
+ **/
+
 var express = require('express');
 var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
 var path = require('path');
+var bodyParser = require('body-parser');
+var Room = require('./room.js');
+var session = require('express-session');
+var sessionStore = new session.MemoryStore();
 
-class Room {
-    get deck() {
-        return this._deck;
-    }
-
-    set deck(value) {
-        this._deck = value;
-    }
-
-    get chiamante() {
-        return this._chiamante;
-    }
-
-    set chiamante(value) {
-        this._chiamante = value;
-    }
-
-    get chiamata() {
-        return this._chiamata;
-    }
-
-    set chiamata(value) {
-        this._chiamata = value;
-    }
-
-    get name() {
-        return this._name;
-    }
-
-    set name(value) {
-        this._name = value;
-    }
-
-    get rules() {
-        return this._rules;
-    }
-
-    set rules(value) {
-        this._rules = value;
-    }
-
-    get id() {
-        return this._id;
-    }
-
-    set id(value) {
-        this._id = value;
-    }
-
-    get playerInside() {
-        return this._playerInside;
-    }
-
-    set playerInside(value) {
-        this._playerInside = value;
-    }
-
-    get gamePhase() {
-        return this._gamePhase;
-    }
-
-    set gamePhase(value) {
-        this._gamePhase = value;
-    }
-
-    get turniDiChiamata() {
-        return this._turniDiChiamata
-    }
-
-    set turniDiChiamata(value) {
-        this._turniDiChiamata = value
-    }
-
-    get hand() {
-        return this._hand
-    }
-
-    set hand(value) {
-        this._hand = value
-    }
-
-    get fineHand() {
-        return this._fineHand
-    }
-
-    set fineHand(value) {
-        this._fineHand = value
-    }
-
-    get cartaChiamata() {
-        return this._cartaChiamata
-    }
-
-    set cartaChiamata(value) {
-        this._cartaChiamata = value
-    }
-
-    get carteTavolo() {
-        return this._carteTavolo
-    }
-
-    set carteTavolo(value) {
-        this._carteTavolo = value
-    }
-
-    get compagno() {
-        return this._compagno
-    }
-
-    set compagno(value) {
-        this._compagno = value
-    }
-
-    get briscola() {
-        return this._briscola
-    }
-
-    set briscola(value) {
-        this._briscola = value
-    }
-
-    get ordine() {
-        return this._ordine
-    }
-
-    set ordine(value) {
-        this._ordine = value
-    }
-
-    get giocatorePrimo() {
-        return this._giocatorePrimo
-    }
-
-    set giocatorePrimo(value) {
-        this._giocatorePrimo = value
-    }
-
-    get oldGamePhase() {
-        return this._oldGamePhase;
-    }
-
-    set oldGamePhase(value) {
-        this._oldGamePhase = value;
-    }
-
-    get disconnesso() {
-        return this._disconnesso;
-    }
-
-    set disconnesso(value) {
-        this._disconnesso = value;
-    }
-
-    get time() {
-        return this._time;
-    }
-
-    set time(value) {
-        this._time = value;
-    }
-
-    get risultato() {
-        return this._risultato;
-    }
-
-    set risultato(value) {
-        this._risultato = value;
-    }
-
-    get levelup() {
-        return this._levelup;
-    }
-
-    set levelup(value) {
-        this._levelup = value;
-    }
-
-    constructor() {
-        this._id = Date.now() + Math.floor(Math.random() * 1000000000);
-        this._playerInside = [];
-        this._roomStatus = 'open';
-        this._gamePhase = 'idle';
-        this._oldGamePhase = 'idle';
-        this._rules = {};
-        this._name = '';
-        this._deck = [];
-        this._chiamante = 0;
-        this._chiamata = {
-            punti: 80,
-            carta: -1
-        };
-        this._hand = 0;
-        this._compagno;
-        this._disconnesso = [];
-        this._utentiDisconnessi = 0;
-        this._time;
-        this._turniDiChiamata = 0;
-        this._cartaChiamata = -1;
-        this._carteTavolo = [];
-        this._giro = 0;
-        this._giocatorePrimo = 0;
-        this._fineHand = 4;
-        for (let i = 0; i < 40; i++) {
-            this._deck.push(i);
-        }
-        this._briscola = -1;
-        this._ordine = [1, 3, 4, 5, 6, 7, 8, 9, 2, 0];
-        this._risultato = [];
-        this._levelup = [];
-    }
-
-
-    isRoomFull() {
-        return this._playerInside.length === 5;
-    }
-
-    addPlayer(player) {
-        this._playerInside.push(player);
-    }
-
-    incTDC() {
-        this._turniDiChiamata++;
-    }
-
-    shuffleDeck() {
-        for (let i = this._deck.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [this._deck[i], this._deck[j]] = [this._deck[j], this._deck[i]];
-        }
-        return this._deck;
-    }
-
-    changeGamePhase(newPhase) {
-        this._gamePhase = newPhase;
-    }
-
-    changeOldGamePhase(phase) {
-        this._oldGamePhase = phase;
-    }
-
-
-}
+var connectedUsers = [];
 
 const bcrypt = require('bcrypt');
 
 let mysql = require('mysql');
+
+/**
+ * @type {Connection}
+ */
 
 let connection = mysql.createConnection({
     host: "localhost",
@@ -259,81 +31,208 @@ let connection = mysql.createConnection({
     port: "8846"
 });
 
+/**
+ * Session Middleware with cookie
+ * @type {Function}
+ */
+
+var sessionMiddleware = session({
+    store: sessionStore,
+    secret: "keyboard cat",
+    resave: true,
+    saveUninitialized: true,
+    cookie: {
+        rolling: true,
+        maxAge: 365 * 24 * 60 * 60 * 1000 * 10
+    }
+});
+
+app.use(sessionMiddleware);
+
+/**
+ * Start connection with database
+ */
+
 connection.connect(function (err) {
     if (err) throw err;
     console.log(`[DATABASE][INFO] Connesso`);
+    let sql = `UPDATE users set idroom ='0'`;
+    connection.query(sql, function (err, rows) {
+        if (err) {
+            console.error(`[DATABASE][ERROR][CONNECT]  ${err}`);
+        }
+    })
 });
+
+var sess;
+let RoomState = {};
 
 server.listen(3000);
 
-app.use(express.static(path.join(__dirname, '../client')));
+/**
+ * Route
+ */
+
 app.get('/', function (req, res) {
-    res.sendfile(path.join(__dirname, '../client/index.html'));
+    sess = req.session;
+    //Control for session
+    if (req.session.user) {
+        if (req.session.idroom !== '0' && !RoomState[req.session.idroom]) {
+            req.session.idroom = '0';
+        } else {
+            if (req.session.idroom === '0') {
+                //Stay
+            } else {
+                let IDdisconnesso = RoomState[req.session.idroom].disconnesso.indexOf(req.session.user);
+                if (IDdisconnesso > -1) {
+                    RoomState[req.session.idroom].disconnesso.splice(IDdisconnesso, 1);
+                    if (RoomState[req.session.idroom].disconnesso.length === 0) {
+                        resetTimer(req.session.idroom).then(function () {
+                            let oldPhase = RoomState[req.session.idroom].oldGamePhase;
+                            RoomState[req.session.idroom].changeGamePhase(oldPhase);
+                        })
+                    }
+                }
+            }
+        }
+        let user_info = {};
+        if (!connectedUsers.find(name => name.username === req.session.user)) {
+            user_info.username = req.session.user;
+            user_info.sessionId = req.session.id;
+            connectedUsers.push(user_info);
+        }
+        res.sendfile(path.join(__dirname, '../client/game/lobby.html'));
+    } else {
+        res.sendfile(path.join(__dirname, '../client/index.html'));
+    }
 });
 
-let RoomState = {};
-io.on("connection", (socket) => {
-    let me = null;
-    console.info(`[SOCKET][INFO] Client connesso! [ID=${socket.id}]`);
-    
-    socket.on('register-user', (data) => {
-        let password = bcrypt.hashSync(data.password, 5);
-        let sql = `INSERT INTO users (username, password, level, score, win, lose) VALUES ('${data.username}', '${password}', 1, 0, 0, 0)`;
-        connection.query(sql, function (err, result) {
+/**
+ * Use in caso of disconnession and riconnection in route /
+ * @param idroom
+ * @returns {Promise<any>}
+ */
+
+function resetTimer(idroom) {
+    return new Promise(function (resolve, reject) {
+        clearTimeout(RoomState[idroom].time);
+        let oldPhase = RoomState[idroom].oldGamePhase;
+        RoomState[idroom].changeGamePhase(oldPhase);
+        resolve();
+    });
+}
+
+app.use(express.static(path.join(__dirname, '../client')));
+
+io.use(function (socket, next) {
+    sessionMiddleware(socket.request, socket.request.res, next);
+});
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: true}));
+
+app.post('/request-user', function (req, res) {
+    sess = req.session;
+    res.send(sess);
+});
+
+app.get('/request-room-modify', function (req, res) {
+    req.session.idroom = '0';
+});
+
+app.post('/register-user', function (req, res) {
+    let password = bcrypt.hashSync(req.body.password, 5);
+    let sql = `INSERT INTO users (username, password, level, score, win, lose) VALUES ('${req.body.username}', '${password}', 1, 0, 0, 0)`;
+    connection.query(sql, function (err, result) {
+        if (err) {
+            console.error(`[DATABASE][ERROR][register-user]  ${err}`);
+            res.send(err.sqlMessage);
+        } else {
+            console.log("[DATABASE][INFO] Record inserito");
+            res.write("Done");
+            res.end();
+        }
+    });
+});
+
+app.post('/login-user', function (req, res) {
+
+    sess = req.session;
+    let sql = `SELECT * FROM users WHERE username = '${req.body.username}'`;
+    connection.query(sql, function (err, rows) {
+        if (err) {
+            res.send(err.sqlMessage);
+            res.end();
+        } else if (!rows.length) {
+            res.send(JSON.stringify("Username non trovato"));
+            res.end();
+        }
+        else if (!bcrypt.compareSync(req.body.password, rows[0].password)) {
+            res.send(JSON.stringify("Password non corretta"));
+            res.end();
+        } else {
+            if (connectedUsers.find(name => name.username === req.body.username)) {
+                res.send(JSON.stringify("Utente già connesso"));
+                res.end();
+            } else {
+                sess.row = rows[0];
+                sess.user = req.body.username;
+                sess.idroom = "0";
+                let user_info = {};
+                user_info.username = req.body.username;
+                user_info.sessionId = req.session.id;
+                connectedUsers.push(user_info);
+                res.send(JSON.stringify(rows[0]));
+                res.end();
+            }
+        }
+    });
+});
+
+app.post('/logout', function (req, res, next) {
+    if (req.session) {
+        //Remove session from server
+        req.session.destroy(function (err) {
             if (err) {
-                socket.emit('registration-error', err);
-                console.error(`[DATABASE][ERROR]  ${err}`);
+                return next(err);
             } else {
-                socket.emit('registration-success', 'Registrato con successo');
-                console.log("[DATABASE][INFO] Record inserito");
+                res.clearCookie('connect.sid');
+                res.end();
             }
         });
-    });
+    }
+});
 
-    socket.on('login-user', (data) => {
-        let sql = `SELECT * FROM users WHERE username = '${data.username}'`;
-        connection.query(sql, function (err, rows) {
-            if (err)
-                socket.emit('login-error', err);
-            else if (!rows.length) {
-                socket.emit('login-error', 'Username non trovato');
-            }
-            else if (!bcrypt.compareSync(data.password, rows[0].password)) {
-                socket.emit('login-error', 'Password non corretta');
-            } else {
-                me = rows[0];
-                if (rows[0].idroom !== "0") {
-                    socket.username = data.username;
-                    let room = RoomState[rows[0].idroom];
-                    if (room.disconnesso.indexOf(data.username) > -1) {
-                        let indice = room.disconnesso.indexOf(data.username);
-                        room.disconnesso.splice(indice, 1);
-                        if (room.disconnesso.length === 0) {
-                            clearTimeout(room.time);
-                            let oldPhase = room.oldGamePhase;
-                            room.changeGamePhase(oldPhase);
-                            emitUpdate(room, rows[0].idroom);
-                        }
-                    }
-                    reconnect(rows[0]);
-                }
-                else {
-                    socket.username = data.username;
-                    socket.emit('login-success', rows[0]);
-                }
-            }
-        });
-    });
+/**
+ * Web socket
+ */
 
-    socket.on('return-lobby', (data) => {
-        let sql = `SELECT * FROM users WHERE username = '${data}'`;
-        connection.query(sql, function (err, rows) {
-            if (err)
-                socket.emit('login-error', err);
-            else {
-                me = rows[0];
-                socket.emit('login-success', rows[0]);
-            }
+io.on("connection", (socket) => {
+
+    console.info(`[SOCKET][INFO] Client connesso! [ID=${socket.id}]`);
+
+    //listen on new_message
+    socket.on('new_message', (data) => {
+        //broadcast the new message
+        io.sockets.emit('new_message', {message: data.message, username: data.username});
+    })
+    //listen on new_message on room
+    socket.on('new_message_room', (data) => {
+        //broadcast the new message
+        io.sockets.in(data.room).emit('new_message_room', {message: data.message, username: data.username});
+    })
+
+    /**
+     *  Used from game-manager for lobby return
+     *  Almost useless currently
+     */
+
+    socket.on('return-lobby', (data) => { //TODO Sistemare il return to game
+        console.log("DENTRO RETURN LOBBY")
+        sessionStore.get(socket.request.sessionID, function (err, data) {
+            data.idroom = '0';
+            sessionStore.sessions[socket.request.sessionID] = JSON.stringify(data);
+            socket.emit('login-success', sessionStore.sessions[socket.request.sessionID].user);
         });
     });
 
@@ -346,18 +245,26 @@ io.on("connection", (socket) => {
         RoomState[room.id] = room;
         RoomState[room.id].addPlayer({player: data.creator, cards: [], passed: false, mazzo: [], compagno: false});
         socket.join(room.id);
+        //socket.username = data.creator.username;
         updateRoom(room.id);
         socket.emit('request-confirmed', room.id);
+        emitUpdate(RoomState[data.id], data.id);
         updateClientRoomStatus();
     }
+
+    /**
+     * Use for update client room status
+     * Copy all rooms and remove ones with  timer
+     * @param src
+     * @returns {*}
+     */
 
     function copy(src) {
         return Object.assign({}, src);
     }
 
     function updateClientRoomStatus() {
-        /*console.log('update client room status');
-        console.dir(RoomState);*/
+
         let tmp = copy(RoomState);
         for (let roomId in tmp) {
             let room = tmp[roomId];
@@ -371,24 +278,48 @@ io.on("connection", (socket) => {
         createRoom(data);
     });
 
-    socket.on('request-room-status', () => {
+    socket.on('request-room-status', (data) => {
+        socket.username = data;
         updateClientRoomStatus();
     });
 
-    function reconnect(data) {
+    /**
+     * From lobby.html if the player was in a room
+     */
+
+    socket.on('reconnect-server', (data) => {
         socket.join(data.idroom);
-        socket.emit('reconnect', {room: RoomState[data.idroom], user: me});
-        emitUpdate(RoomState[data.idroom], data.idroom);
+        socket.username = data.row.username;
+        resetTimer(data.idroom).then(function () {
+            socket.emit('reconnect', {room: RoomState[data.idroom], user: data.row, id: data.idroom});
+            emitUpdate(RoomState[data.idroom], data.idroom);
+        });
+    });
+
+    /**
+     * Update for room in session
+     * @param data_room
+     */
+
+    function updateRoom(data_room) {
+        sessionStore.get(socket.request.sessionID, function (err, data) {
+            data.idroom = data_room;
+            sessionStore.sessions[socket.request.sessionID] = JSON.stringify(data);
+        });
     }
 
-    function updateRoom(data) {
-        let sql = `UPDATE users SET idroom='${data}' WHERE id='${me.id}'`;
-        connection.query(sql, function (err, result) {
-            if (err) {
-                console.error(`[DATABASE][ERROR]  ${err}`);
-            } else {
-                console.log("[DATABASE][INFO] Record del giocatore modificato con la stanza: " + JSON.stringify(data, null, 4));
-            }
+    /**
+     * Promise to get room from session with socket
+     * @returns {Promise<any>}
+     */
+
+    function getRoom() {
+        return new Promise(function (resolve, reject) {
+            sessionStore.get(socket.request.sessionID, function (err, data) {
+                if (data) {
+                    resolve(data.idroom);
+                }
+            });
         });
     }
 
@@ -406,6 +337,7 @@ io.on("connection", (socket) => {
             socket.emit('request-confirmed', data.room);
             updateRoom(data.room);
         }
+        emitUpdate(RoomState[data.id], data.id);
         updateClientRoomStatus();
     });
 
@@ -419,15 +351,17 @@ io.on("connection", (socket) => {
     socket.on('request-game-state', (data) => {
         if (RoomState[data].isRoomFull()) {
             RoomState[data].changeGamePhase('start');
+            updateRoom(data.room);
         }
         if (RoomState[data].gamePhase === 'start') {
-            distCarte(data);
+            distCards(data);
         }
         console.log(`[GAME] ${socket.id} requested game state`);
+
         emitUpdate(RoomState[data], data);
     });
 
-    function distCarte(data) {
+    function distCards(data) {
         let deck = RoomState[data].shuffleDeck();
         RoomState[data].turniDiChiamata = 0;
         RoomState[data].chiamante = 0;
@@ -436,11 +370,11 @@ io.on("connection", (socket) => {
             RoomState[data].playerInside[i].cards = deck.slice(i * 8, (i + 1) * 8);
         }
         RoomState[data].changeGamePhase('chiamata');
-        console.log('[GAME] Carte Distribuite');
+        console.log('[GAME] Distributed Cards');
         emitUpdate(RoomState[data], data);
     }
 
-    function controlloGiroMorto(roomId) {
+    function checkDeadLap(roomId) {
         if (RoomState[roomId].rules.giro === true) {
             RoomState[roomId].changeGamePhase('giroMorto');
             emitUpdate(RoomState[roomId], roomId);
@@ -450,15 +384,16 @@ io.on("connection", (socket) => {
         }
     }
 
-    function prossimoChiamante(roomId) {
+    function nextCaller(roomId) {
         if (RoomState[roomId].gamePhase === 'chiamata') {
             let tdc = RoomState[roomId].turniDiChiamata;
-            /** se chiamano 118 */
+            //if someone calls 118
             if (RoomState[roomId].chiamata.punti === 118) {
-                controlloGiroMorto(roomId);
+                RoomState[roomId].hand = 0;
+                checkDeadLap(roomId);
                 return;
             }
-            /** se passano tutti */
+            //if everyone rolls on
             let passedCount = 0;
             for (let i = 0; i < 5; i++) {
                 if (RoomState[roomId].playerInside[i].passed === true) {
@@ -467,12 +402,12 @@ io.on("connection", (socket) => {
             }
             if (passedCount === 5) {
                 RoomState[roomId].changeGamePhase('scegliCarta');
-                distCarte(roomId);
-                console.log("Fase cambiata in start!!");
+                distCards(roomId);
+                console.log("Phase changed in start!!");
                 emitUpdate(RoomState[roomId], roomId);
                 return;
             }
-            /* highlander */
+            //Highlander. The last one who calls
             if (passedCount === 4 && tdc >= 5) {
                 let highlander = -1;
                 for (let i = 0; i < 5; i++) {
@@ -481,61 +416,80 @@ io.on("connection", (socket) => {
                     }
                 }
                 RoomState[roomId].chiamante = highlander;
-                controlloGiroMorto(roomId);
+                RoomState[roomId].hand = 0;
+                checkDeadLap(roomId);
                 return;
             }
             let next = (RoomState[roomId].chiamante + 1) % 5;
             RoomState[roomId].chiamante = next;
+            RoomState[roomId].hand = next;
             if (RoomState[roomId].playerInside[next].passed === true) {
-                prossimoChiamante(roomId);
+                nextCaller(roomId);
             }
             emitUpdate(RoomState[roomId], roomId);
         }
     }
 
-    function aggiornaPunti(id, punti) {
-        console.log('Aggiorno punti');
+    /**
+     * Update points after calls
+     * @param id
+     * @param punti
+     */
+
+    function pointsUpdate(id, punti) {
+        console.log('Update points');
         RoomState[id]._chiamata.punti = punti;
     }
 
-    socket.on('newChiamataScore', (data) => {
-        aggiornaPunti(data.id, data.value);
+    /**
+     * From game manager after a call
+     */
+
+    socket.on('newCallScore', (data) => {
+        pointsUpdate(data.id, data.value);
+        RoomState[data.id]._nome = data.user;
         RoomState[data.id].incTDC();
-        prossimoChiamante(data.id);
+        nextCaller(data.id);
     });
 
-    socket.on('passaChiamata', (data) => {
-        let chiamante = RoomState[data].chiamante;
-        RoomState[data].playerInside[chiamante].passed = true;
+    /**
+     * After a roll on from game manager
+     */
+
+    socket.on('passTheCall', (data) => {
+        let caller = RoomState[data].chiamante;
+        RoomState[data].playerInside[caller].passed = true;
         RoomState[data].incTDC();
-        prossimoChiamante(data);
+        nextCaller(data);
     });
 
-    socket.on('clickCarta', (data) => {
+    socket.on('clickCard', (data) => {
         let iduser = -1;
         for (let i = 0; i < 5; i++) {
             if (data.giocatore === RoomState[data.roomId].playerInside[i].player.username) {
                 iduser = i;
             }
         }
-        //console.log("Hand:" + RoomState[data.roomId].hand);
         if (iduser === RoomState[data.roomId].hand) {
             let id = RoomState[data.roomId].playerInside[iduser].cards.indexOf(data.carta);
             RoomState[data.roomId].playerInside[iduser].cards.splice(id, 1);
-            //console.log(RoomState[data.roomId].playerInside[iduser].cards);
             RoomState[data.roomId].hand = (RoomState[data.roomId].hand + 1) % 5;
             RoomState[data.roomId].carteTavolo.push(data.carta);
             if (RoomState[data.roomId].carteTavolo.length === 5) {
                 if (RoomState[data.roomId].rules.giro === false) {
-                    console.log("Niente giro morto!!");
-                    presa(data);
+                    console.log("No 'Giro Morto'!!");
+                    taking(data);
                     return;
                 } else if (RoomState[data.roomId].briscola === -1) {
-                    console.log("Primo giro con giro morto!!");
-                    RoomState[data.roomId].changeGamePhase('scegliCarta');
+                    console.log("First lap of 'Giro morto'!!");
+                    //Bad delay
+                    setTimeout(() => {
+                        choose(data)
+                    }, 1000);
                 } else {
-                    console.log("Giro di giro morto!!");
-                    presa(data);
+                    console.log("'Giro Morto'!!");
+                    RoomState[data.roomId]._carteTavoloGiroMorto = RoomState[data.roomId]._carteTavolo;
+                    taking(data);
                     RoomState[data.roomId].changeGamePhase('gioco');
                 }
             }
@@ -543,7 +497,60 @@ io.on("connection", (socket) => {
         }
     });
 
-    socket.on('cartaCompagno', (data) => {
+    function choose(data) {
+        RoomState[data.roomId]._carteTavoloGiroMorto = RoomState[data.roomId]._carteTavolo;
+        RoomState[data.roomId].changeGamePhase('scegliCarta');
+        emitUpdate(RoomState[data.roomId], data.roomId);
+    }
+
+    socket.on('timer', (data) => { //Todo sistemare questa parte
+        if (RoomState[data].timerGame) {
+
+        } else {
+            RoomState[data].chiamataTimer = 1;
+            //io.sockets.in(data).emit('new_message_room', {message: "Timer attivato", username: "System"});
+            //RoomState[data].time = setTimeout(() => {
+            randomThrow(data);
+            //}, 10000); //10 secondi prima del lancio automatico
+        }
+    });
+
+    function randomThrow(room) {
+
+        let iduser = -1;
+        let user;
+        RoomState[room].chiamataTimer = 0;
+        for (let i = 0; i < 5; i++) {
+            if (RoomState[room].hand === RoomState[room].playerInside[i].player.username) {
+                user = RoomState[room].playerInside[i].player.username;
+                iduser = i;
+            }
+        }
+
+        let val = RoomState[room].hand;
+        user = RoomState[room].playerInside[val].player.username;
+        iduser = val;
+
+        let cartaIndex = Math.floor((Math.random() * (RoomState[room].playerInside[iduser].cards.length - 1)));
+        let carta = RoomState[room].playerInside[iduser].cards[cartaIndex];
+
+        let data = {
+            roomId: room,
+            carta: carta,
+            giocatore: user
+        };
+
+        RoomState[room].playerInside[iduser].cards.splice(cartaIndex, 1);
+        RoomState[room].hand = (RoomState[data.roomId].hand + 1) % 5;
+        RoomState[room].carteTavolo.push(carta);
+        if (RoomState[room].carteTavolo.length === 5) {
+            taking(data);
+        }
+        emitUpdate(RoomState[data.roomId], data.roomId);
+
+    }
+
+    socket.on('cardMate', (data) => {
         let room = RoomState[data.roomId];
         room.cartaChiamata = data.carta;
         for (let i = 0; i < room.playerInside.length; i++) {
@@ -554,25 +561,29 @@ io.on("connection", (socket) => {
                 }
             }
         }
-        console.log("Compagno: " + room.cartaChiamata + " Numero compagno: " + room.compagno);
-        //console.log(room.playerInside);
+
         room.briscola = Math.floor(room.cartaChiamata / 10);
         if (room.rules.giro === true) {
-            presa(data);
+            taking(data);
         } else {
             room.changeGamePhase('gioco');
         }
         emitUpdate(room, data.roomId);
     });
 
-    function presa(data) {
-        console.log("Carte In tavolo: " + RoomState[data.roomId].carteTavolo);
+    function taking(data) {
+        let numero = RoomState[data.roomId].carteTavolo,
+            ordine = RoomState[data.roomId].ordine;
+        for (let i = 0; i < numero.length; i++) {
+            let valore = numero[i],
+                val = valore % 10;
+        }
         let cartaVincente = 0,
             posizione = 0,
             brisc = false,
             seme = 0,
             carteTavolo = RoomState[data.roomId].carteTavolo,
-            ordine = RoomState[data.roomId].ordine,
+
             briscola = RoomState[data.roomId].briscola;
         if (Math.floor(carteTavolo[0] / 10) === briscola) {
             cartaVincente = (carteTavolo[0]) % 10;
@@ -593,39 +604,37 @@ io.on("connection", (socket) => {
                     cartaVincente = carteTavolo[i] % 10;
                     brisc = true;
                     posizione = i;
-                } else if ((Math.floor(carteTavolo[i]) / 10) === briscola && brisc === true) {
-                    let c = (carteTavolo[i]) % 10;
-                    if (ordine.indexOf(cartaVincente) < ordine.indexOf(c)) {
-                        cartaVincente = c;
-                        posizione = i;
-                    }
                 } else {
-                    if ((Math.floor(carteTavolo[i]) / 10) === seme && brisc === false) {
-                        let c = carteTavolo[i] % 10;
+                    if (Math.floor(carteTavolo[i] / 10) === briscola && brisc === true) {
+                        let c = (carteTavolo[i]) % 10;
                         if (ordine.indexOf(cartaVincente) < ordine.indexOf(c)) {
                             cartaVincente = c;
                             posizione = i;
+                        }
+                    } else {
+                        if (Math.floor(carteTavolo[i] / 10) === seme && brisc === false) {
+                            let c = carteTavolo[i] % 10;
+                            if (ordine.indexOf(cartaVincente) < ordine.indexOf(c)) {
+                                cartaVincente = c;
+                                posizione = i;
+                            }
                         }
                     }
                 }
             }
         }
-        RoomState[data.roomId].giro++;
+        RoomState[data.roomId]._giro = RoomState[data.roomId]._giro + 1;
         let vincente = (RoomState[data.roomId].giocatorePrimo + posizione) % 5;
-        console.log("Vincente: " + vincente + " Posizione: " + posizione);
         RoomState[data.roomId].fineHand = (vincente + 4) % 5;
         RoomState[data.roomId].hand = vincente;
-        RoomState[data.roomId].giocatorePrimo = vincente;
         RoomState[data.roomId].playerInside[vincente].mazzo = RoomState[data.roomId].playerInside[vincente].mazzo.concat(carteTavolo);
-        //console.log("Mazzo: " + RoomState[data.roomId].playerInside[vincente].mazzo);
-        //console.log("Hand: " + RoomState[data.roomId].hand + " Fine Hand: " + RoomState[data.roomId].fineHand);
-        while (carteTavolo.length > 0) {
-            carteTavolo.pop();
-        }
-        console.log("Chiamante" + RoomState[data.roomId].chiamante);
-        // Se era l' ultimo giro
+        setTimeout(() => {
+            resetArray(data, vincente)
+        }, 2000);
+        console.log("Caller" + RoomState[data.roomId].chiamante);
+        // If is the last lap
         if (RoomState[data.roomId].playerInside[vincente].cards.length === 0) {
-            calcoloPunteggio(data);
+            scoreCalculate(data);
         }
         if (RoomState[data.roomId].rules.giro === true) {
             RoomState[data.roomId].changeGamePhase('gioco');
@@ -633,7 +642,15 @@ io.on("connection", (socket) => {
         emitUpdate(RoomState[data.roomId], data.roomId);
     }
 
-    function calcoloPunteggio(data) {
+    function resetArray(data, winner) {
+        while (RoomState[data.roomId].carteTavolo.length > 0) {
+            RoomState[data.roomId].carteTavolo.pop();
+        }
+        RoomState[data.roomId].giocatorePrimo = winner;
+        emitUpdate(RoomState[data.roomId], data.roomId);
+    }
+
+    function scoreCalculate(data) {
         let carteChiamante = [],
             carteFinali = [],
             punteggio = 0;
@@ -656,7 +673,7 @@ io.on("connection", (socket) => {
                 punteggio += 4;
             }
         }
-        console.log("Punteggio: " + punteggio + "Carte: " + carteFinali + carteChiamante);
+        room._punteggio = punteggio;
         if (punteggio >= room.chiamata.punti) {
             players[chiamante].player.score = players[chiamante].player.score + 25;
             players[chiamante].player.win++;
@@ -690,86 +707,99 @@ io.on("connection", (socket) => {
                 }
             }
         }
-        console.log("Risultato: " +room.risultato);
+        emitUpdate(RoomState[data.roomId], data.roomId);
         setTimeout(() => {
-            chiudi(data.roomId)
+            close(data.roomId)
         }, 5000);
     }
 
-    function getRecordDisc(username) {
-        return new Promise(function (resolve, reject) {
-            let sql = `SELECT idroom FROM users WHERE username = '${username}'`;
-            connection.query(sql, function (err, rows) {
-                if (err) {
-                    console.error(`[DATABASE][ERROR]  ${err}`);
-                    return reject(err);
-                }
-                resolve(rows);
-            });
-        });
-    }
-
-    function gestisciDisconnessione(sockid, sockUser) {
-        console.log("Entrato in gestisci disconnessione per l' utente: " +sockUser);
-        let room = '0';
-        getRecordDisc(sockUser).then(function (rows) {
-            room = rows[0].idroom;
-            if (room !== '0') {
-                RoomState[room].disconnesso.push(sockUser);
-                if (RoomState[room].disconnesso.length === 2) {
-                    clearTimeout(RoomState[room].time);
-                    chiudi(room);
-                } else {
-                    let phase = RoomState[room]._gamePhase;
-                    RoomState[room].changeOldGamePhase(phase);
-                    RoomState[room].changeGamePhase("disconnessione");
-                    emitUpdate(RoomState[room], room);
-                    setTimer(room);
-                }
+    function discHandle(room, sockUser) {
+        RoomState[room].chiamataTimer = 0;
+        RoomState[room].disconnesso.push(sockUser);
+        if (RoomState[room].disconnesso.length === 2) {
+            clearTimeout(RoomState[room].time);
+            close(room);
+        } else {
+            if (RoomState[room].playerInside.length < 5) {
+                close(room);
+            } else {
+                let phase = RoomState[room]._gamePhase;
+                RoomState[room].changeOldGamePhase(phase);
+                RoomState[room].changeGamePhase("disconnessione");
+                emitUpdate(RoomState[room], room);
+                setTimer(room);
             }
-        }).catch((err) => setImmediate(() => { console.error(`[DATABASE][ERROR]  ${err}`); }));
+        }
     }
 
     function setTimer(data) {
         RoomState[data].time = setTimeout(() => {
-            chiudi(data)
+            close(data)
         }, 30000);
     }
 
-    function modificaRecord(data) {
+    function recordModifier(data) {
         return new Promise(function (resolve, reject) {
             for (let i = 0; i < RoomState[data].playerInside.length; i++) {
                 let player = RoomState[data].playerInside[i].player;
-            let sql = `UPDATE users SET score = '${player.score}',
+                let sql = `UPDATE users SET score = '${player.score}',
         level = '${player.level}',
         win = '${player.win}',
         lose = '${player.lose}',
         idroom = '0'
         WHERE id = '${player.id}'`;
-            connection.query(sql, function (err, rows) {
-                if (err) {
-                    console.error(`[DATABASE][ERROR]  ${err}`);
-                    return reject(err);
-                }
-                resolve(rows);
-            });
+                connection.query(sql, function (err, rows) {
+                    if (err) {
+                        console.error(`[DATABASE][ERROR][recordModifier]  ${err}`);
+                        return reject(err);
+                    }
+                    resolve(rows);
+                });
+                let data_user = connectedUsers.find(name => name.username === player.username);
+                sessionStore.get(data_user.sessionId, function (err, data) {
+                    data.idroom = '0';
+                    sessionStore.sessions[data_user.sessionId] = JSON.stringify(data);
+                });
             }
         });
     }
 
-    function chiudi(data) {
+    function close(data) {
         RoomState[data].changeGamePhase('chiusura');
-            modificaRecord(data).then(function (rows) {
-                emitUpdate(RoomState[data], data);
+        recordModifier(data).then(function (rows) {
+            emitUpdate(RoomState[data], data);
+            setTimeout(() => {
                 delete RoomState[data];
-            }).catch((err) => setImmediate(() => { console.error(`[DATABASE][ERROR]  ${err}`); }));
+            }, 5000);
+        }).catch((err) => setImmediate(() => {
+            console.error(`[DATABASE][ERROR][close]  ${err}`);
+        }));
     }
+
+    socket.on('give-up', (data) => {
+        close(data);
+    });
 
     socket.on("disconnect", () => {
         console.info(`[SOCKET][INFO] Client disconnesso! [id = ${socket.id}] [username = ${socket.username}]`);
+        console.dir(connectedUsers);
         if (socket.username) {
-            let sockid = socket.id;
-            gestisciDisconnessione(sockid, socket.username);
+
         }
+        getRoom().then(function (room) {
+            if (!RoomState[room]) {
+                let data = connectedUsers.find(name => name.username === socket.username);
+                connectedUsers.splice(connectedUsers.indexOf(data), 1);
+            } else {
+                setTimeout(function () {
+                    if (connectedUsers.find(name => name.username === socket.username)) {
+
+                    } else {
+                        console.dir(connectedUsers);
+                        discHandle(room, socket.username);
+                    }
+                }, 2000);
+            }
+        })
     });
 });

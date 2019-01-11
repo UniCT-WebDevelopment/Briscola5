@@ -1,66 +1,415 @@
-<!--
- * La pagina per la Lobby.
- * Qui vengono mostrate le stanze attive, i giocatori all'interno della stanza e il pulsante di creazione
- * di una nuova stanza.
- -->
+<head>
+    <meta charset="UTF-8">
+    <title>Bri5cola</title>
+    <link rel="shortcut icon" href="./assets/images/icona1.png" type="image/x-icon"/>
+    <script src="js/lib/jquery-3.3.1.js"></script>
+    <script src="js/lib/popper.min.js"></script>
+    <script src="js/lib/bootstrap.js"></script>
+    <script src="js/lib/velocity.min.js"></script>
+    <script src="js/lib/socket.io.js"></script>
+    <script src="js/socket-config.js"></script>
+    <script src="js/request-manager.js"></script>
+    <link rel="stylesheet" href="css/lib/bootstrap.css">
+    <link rel="stylesheet" href="css/lib/component-custom-switch.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="../js/lobby-manager.js"></script>
+    <script src="../js/game-manager.js"></script>
+    <script src="../js/chat-lobby.js"></script>
 
 
-<nav class="navbar navbar-expand-lg navbar-light bg-custom-primary">
-    <a class="navbar-brand" href="#">
-        <img src="../assets/images/logo.png" width="60" height="30" alt="Bri5cola">
-    </a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
-            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
+</head>
 
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <ul class="navbar-nav mr-auto">
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown"
-                   aria-haspopup="true" aria-expanded="false">
-                    Dropdown
-                </a>
-                <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                    <p class="dropdown-item" id="dropdown-user-level">Action</p>
-                    <p class="dropdown-item" id="dropdown-user-score">Another action</p>
-                    <p class="dropdown-item" id="dropdown-user-winloserate">Another action</p>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="#">Logout</a>
+<body>
+
+<script>
+    let url = "http://localhost:3000/request-user";
+
+    let xhr = new XMLHttpRequest();
+    xhr.open("POST", url, true);
+    xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
+    xhr.onload = function () {
+        let response = JSON.parse(this.response);
+        socket.username = response.row.username;
+        document.getElementById('user-name').innerText = ` ${response.row.username}`;
+        document.getElementById('user-level').innerText = `Level: ${response.row.level}`;
+        document.getElementById('user-score').innerText = `Points: ${response.row.score}`;
+        document.getElementById('user-winloserate').innerText = `W: ${response.row.win} - L ${response.row.lose}`;
+        window.user = response.row;
+        if (response.idroom !== "0") {
+            socket.emit("reconnect-server", response);
+        } else {
+            socket.emit('request-room-status', response.row.username);
+        }
+    };
+
+    xhr.send();
+
+</script>
+
+<div id="game_screen" class="view hidden">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-2"></div>
+            <div class="col-2"></div>
+        </div>
+        <div class="row">
+            <div class="col-9">
+                <div class="d-flex flex-row justify-content-around">
+                    <div class="player" style="opacity: 0"></div>
+                    <div>
+                        <div class="player" id="player2"></div>
+                        <div class="prova"><img class="coppola" id="cop2" src="../assets/images/coppola1.png"></div>
+                    </div>
+                    <div>
+                        <div class="player" id="player1"></div>
+                        <div class="prova"><img class="coppola" id="cop1" src="../assets/images/coppola1.png"></div>
+                    </div>
+
+                    <div class="player" style="opacity: 0"></div>
                 </div>
-            </li>
-        </ul>
-    </div>
-</nav>
+                <div class="d-flex flex-row justify-content-around align-items-center">
+                    <div>
+                        <div class="player" id="player3"></div>
+                        <div class="prova"><img class="coppola" id="cop3" src="../assets/images/coppola1.png"></div>
+                    </div>
 
-<div class="container-fluid">
-    <div class="d-flex flex-row m-2">
-        <div class="form-group m-2">
-            <label for="room-name" class="badge">Nome Stanza</label>
-            <input type="text" class="form-control" id="room-name">
+                    <div class="table-game" id="table">
+
+                        <div class="d-flex justify-content-around align-items-center table-row row-top">
+                            <div class="mw-25">&nbsp;</div>
+                            <div class="mw-25 d-flex flex-column justify-content-around align-items-center"
+                                 id="table2">
+                                &nbsp;
+                            </div>
+                            <div class="mw-25 d-flex flex-column justify-content-around align-items-center"
+                                 id="table1">
+                                &nbsp;
+                            </div>
+                            <div class="mw-25">&nbsp;</div>
+
+                        </div>
+                        <div class="d-flex justify-content-around align-items-center table-row row-bottom">
+                            <div class="mw-33 d-flex flex-column justify-content-around align-items-center">
+                                <div id="table3">&nbsp;</div>
+                                <br>
+                                <br>
+                            </div>
+                            <div class="mw-33 d-flex flex-column justify-content-around align-items-center"
+                                 id="table4">
+                                &nbsp;
+                            </div>
+                            <div class="mw-33 d-flex flex-column justify-content-around align-items-center">
+                                <div id="table0">&nbsp;</div>
+                                <br>
+                                <br>
+                            </div>
+
+                        </div>
+
+                    </div>
+                    <div>
+                        <div class="player" id="player0"></div>
+                        <div class="prova"><img class="coppola" id="cop0" src="../assets/images/coppola1.png"></div>
+                    </div>
+                </div>
+                <div class="d-flex flex-row justify-content-around">
+                    <div>
+                        <div class="player" id="player4">
+                            <li>You</li>
+                        </div>
+                        <div class="prova"><img class="coppola" id="cop4" src="../assets/images/coppola1.png"></div>
+                    </div>
+                </div>
+                <div class="d-flex flex-row justify-content-around">
+
+                    <div id="my-cards"></div>
+
+                </div>
+                <br>
+            </div>
+            <div class="col-3 border-left position-relative">
+                <div class="game-right-side">
+
+                    <div class="tab">
+                        <button class="tablinks" onclick="openTab(event, 'game-tab')"><i class="fa fa-gamepad"></i> Game
+                        </button>
+                        <button class="tablinks" id="chat-button" onclick="openTab(event, 'chat-game-tab')"><i
+                                class="fa fa-commenting-o"></i> Chat
+                        </button>
+                    </div>
+
+                    <div id="game-tab" class="tabcontent" style="display:block">
+                        <div id="game-status" class="border-bottom"></div>
+                        <p>
+                        <center>Called Card:</center>
+                        </p>
+                        <center>
+                            <div id="card-called">
+                                <img class="card-cover" src="../assets/images/Carta_retro.jpg">
+                            </div>
+                        </center>
+                        <div class="row">
+                            <div class="col-4">
+                                <div class="mega"><img class="megaphone" id="megaphone-id"
+                                                       src="../assets/images/megafono.png">
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div id="caller-right">Caller</div>
+                            </div>
+                            <div class="col-4">
+                                <div id="points">Points</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="chat-game-tab" class="tabcontent">
+                        <div class="chat-game">
+                            <div class="chat-messages" id="chat-game" style="height: 90%"></div>
+                            <div class="input-group chat-input">
+                                <input type="text" maxlength="250" minlength="10" id="chat_game_input"
+                                       class="form-control">
+                                <input type="button" class="btn chat-btn" onclick="chat_send_message_room()"
+                                       title="Send" value="Send">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="myModal" class="modal">
+                        <div class="modal-content animation-first" style="border-width: 5px">
+                            <p>Scegli il valore della chiamata</p>
+                            <input id='calling-input' type="number" min="81" max="118" value="81"/>
+                            <button id='chiamata-conferma' onclick='game.sendCall()'>Call</button>
+                            <button id='chiamata-passa' onclick='game.giveUp()'>Pass</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="middlediv">
+                    <div id="winnerRound"></div>
+                    <div id="currentPlayer"></div> <!-- Quale utente deve giocare -->
+                    <div id="sceltaChiamata"></div>
+                </div>
+                <div class="bottomdiv">
+                    <div id="'abbandonoTesto"></div>
+                    <button id="give-up-button" onclick="game.giveUpMatch()">Give Up</button>
+                    <button id="timer-button" onclick="game.startTimer()">Start Timer</button>
+                </div>
+                <div id="output"></div>
+
+            </div>
+
         </div>
-        <div class="form-group m-2 custom-switch custom-switch-label-yesno">
-            <label for="room-giro" class="badge">Giro morto?</label> <br>
-            <input type="checkbox" class="custom-switch-input" id="room-giro">
-            <label class="custom-switch-btn" for="room-giro"></label>
+        <div id="callCardModal" class="modal">
+            <!-- Modal content -->
+            <div class="call-card-modal-content">
+                <span class="close">&times;</span>
+                <p>Scegli carta da chiamare</p>
+                <div id="callCard"></div>
+            </div>
+            <div class="cards-table" id="cardsT">
+                <button id="button-table" onmouseover="mouseOver()" onmouseout="mouseOut()">Cards in table</button>
+            </div>
 
         </div>
-        <div class="form-group m-2">
-            <label for="room-card-type" class="badge">Tipo mazzo</label>
-            <select name="card-type" class="form-control" id="room-card-type">
-                <option value="siciliane">Siciliane</option>
-                <option value="napoletane">Napoletane</option>
-            </select>
+
+        <div id="discModal" class="modal">
+            <!-- Modal content -->
+            <div class="disconnection-modal-content">
+                <span class="close">&times;</span>
+                <h1 style="color: #9fcdff; align-content: center">A player has disconnected! Timeout before the end of the game
+                </h1>
+                <br><br>
+                <img id="load" src="../assets/images/giphy.gif">
+            </div>
         </div>
-        <br>
-    </div>
-    <div class="form-group m-2">
-        <button class="btn btn-login" onclick="lobby.createRoom()">Invia</button>
-    </div>
+        <!--Modal attesa non implementato -->
+        <div id="waitModal" class="modal">
+            <!-- Modal content -->
+            <div class="wait-modal-content">
+                <img id="wait" src="../assets/images/giphy_(1).gif">
+            </div>
+        </div>
 
-    <hr>
-    <div class="rooms-area" id="rooms-area">
-    </div>
+        <div id="gameoverModal" class="modal">
+            <!-- Modal content -->
+            <div class="game-over-modal-content">
+                <div class="row" style="height:20%">
+                    <span class="outline end-right" id="match-result"></span>
+                    <span class="outline end-left" id="you-result">YOU</span>
+                </div>
+                <div class="row align-items-center" style="height:20%; max-height: 50%">
+                    <!-- Row of the table with players results -->
+                    <table id="table-results" style="width:100%; text-align: center">
+                        <tr>
+                            <td id="duo" width="50%" style="font-size: 4rem"><span class="fa fa-user caller" id="caller"></span><span
+                                    class="fa fa-user caller" id="mate"></span></td>
+                            <td style="font-size: 2rem"><span id="call"></span><span>--</span><span id="caller-mate"></span></td>
+                            <td><span id="duo-points" style="font-size: 3rem"></span>/120</td>
+                        </tr>
+                        <tr>
+                            <td id="trio" style="font-size: 4rem;"><span class="fa fa-user"></span><span
+                                    class="fa fa-user"></span><span class="fa fa-user"></span></td>
+                            <td style="font-size: 2rem"><span id="first"></span><span>--</span><span id="second"></span><span>--</span><span id="third"></span></td>
+                            <td><span id="trio-points" style="font-size: 3rem"></span>/120</td>
+                        </tr>
+                    </table>
 
+                </div>
+                <div class="row align-items-center">
+                    <!-- Row with return lobby button -->
+                    <button type="button" style="margin:auto;" class="btn btn-lg" onclick="location.href='/' ">Return to lobby</button>
+                </div>
+                <!-- Bad sounds -->
+                <audio src="../assets/sounds/nsmb_death.wav" id="lose"></audio>
+                <audio src="../assets/sounds/nsmb_coin.wav" id="win"></audio>
+                <!--<audio src="../assets/sounds/" id="level-up"></audio>-->
+            </div>
+        </div>
+
+
+        <script>
+            function mouseOver() {
+                document.getElementById("table").style.zIndex = "3";
+            }
+
+            function mouseOut() {
+                document.getElementById("table").style.zIndex = "1";
+            }
+        </script>
+    </div>
 </div>
 
+    <div id="lobby_screen" class="view active">
+
+        <div class="navbar">
+            <a class="navbar-brand" href="">
+                <img src="../assets/images/logo.png" width="192px" height="56px" alt="Bri5cola"> <!--60-30-->
+            </a>
+            <div class="topnav-right">
+                <!-- Settings for future updates -->
+                <button class="navbtn" data-toggle="tooltip" data-placement="bottom" title="Settings"
+                        style="font-size:150%; min-width: 5rem"><span><i class="fa fa-gears" style="font-size:100%"></i> Settings</span>
+                </button>
+                <button class="navbtn" href="/logout" data-toggle="tooltip" onclick="sendToServer.logout()"
+                        data-placement="bottom" title="Log out"
+                        style="font-size:150%; min-width: 5rem"><span><i class="fa fa-user-times" style="font-size:100%"
+                ></i> Log out</span>
+                </button>
+            </div>
+        </div>
+
+
+        <div class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    ...
+                </div>
+            </div>
+        </div>
+
+        <div class="container-fluid">
+            <div class="row lobby-container">
+                <!-- STANZE -->
+                <div class="col-9">
+                    <br>
+                    <!-- Trigger the modal with a button -->
+                    <button type="button" class="btn btn-lg" id="btn-room-create" data-toggle="modal"
+                            data-target="#myModalRoom"><i class="fa fa-group" style="font-size:100%"></i> Create Room
+                    </button>
+
+                    <!-- Modal -->
+                    <div class="modal fade" id="myModalRoom" role="dialog" data-backdrop="false">
+                        <div class="modal-dialog">
+
+                            <!-- Modal content-->
+                            <div class="modal-content" style="width: 100%; margin: auto">
+                                <div class="modal-header">
+                                    <h4 class="modal-title">Room Settings</h4>
+                                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="form-group m-2">
+                                        <label for="room-name" class="badge">Room Name</label>
+                                        <input type="text" class="form-control" id="room-name">
+                                    </div>
+                                    <div class="form-group m-2 custom-switch custom-switch-label-yesno">
+                                        <label for="room-giro" class="badge">'Giro Morto'?</label> <br>
+                                        <input type="checkbox" class="custom-switch-input" id="room-giro">
+                                        <label class="custom-switch-btn" for="room-giro"></label>
+
+                                    </div>
+                                    <div class="form-group m-2">
+                                        <label for="room-card-type" class="badge">Cards Type</label>
+                                        <select name="card-type" class="form-control" id="room-card-type">
+                                            <option value="siciliane">Siciliane</option>
+                                            <option value="napoletane">Napoletane</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <div class="form-group m-2">
+                                        <button class="btn btn-send" onclick="lobby.createRoom()" data-dismiss="modal">
+                                            Invia
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    <!--<hr>-->
+                    <div class="rooms-area" id="rooms-area">
+                    </div>
+
+                </div>
+                <!-- CHAT -->
+                <div class="col-3 chat-bg">
+                    <div class=" align-items-center user-info-card">
+                        <h3 class="user-info-head"><span><i class="fa fa-id-badge"></i></span><b id="user-name">-</b>
+                        </h3>
+                        <p class="user-info-row" id="user-level">-</p>
+                        <p class="user-info-row" id="user-score">-</p>
+                        <p class="user-info-row" id="user-winloserate">-</p>
+
+                    </div>
+                    <div class="chat">
+                        <div class="chat-messages" id="chat"></div>
+                        <div class="input-group chat-input">
+                            <input type="text" maxlength="250" minlength="1" id="chat_input" class="form-control">
+                            <input type="button" class="btn chat-btn" onclick="chat_send_message()" title="Invia"
+                                   value="Invia">
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+            if (tabName === 'chat-game-tab') {
+                let ci = document.getElementById('chat-button');
+                ci.classList.remove("prova2");
+            }
+        }
+    </script>
+
+    <footer class="footer">
+        <p>Ismaele Benbachir - X81000345</p>
+    </footer>
+</body>

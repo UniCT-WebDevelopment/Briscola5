@@ -8,16 +8,13 @@ class LobbyManager {
     }
 
     setState(state) {
-        console.dir(state);
         Object.assign(this.state, state);
         this.render();
     }
 
     roomStateListener() {
         let self = this;
-        console.log('listner');
         socket.on('update-room-status', (data) => {
-            console.log('on update room status');
             if(document.getElementById('rooms-area') !== null){
                 self.setState({rooms: data});
             }
@@ -41,13 +38,14 @@ class LobbyManager {
 
     render() {
         document.getElementById('rooms-area').innerHTML = '';
-        console.log(this.state.rooms);
         let div = '';
         let rooms = this.state.rooms;
 
         for (let roomId in rooms) {
             let room = rooms[roomId];
             let tableInner = '';
+            let giroMorto = room._rules.giro ? "'Giro Morto'" : "No 'Giro Morto'";
+            let carte = room._rules.carte;
             room._playerInside.map((player, i) => {
                 tableInner += `<tr><td>${player.player.username}</td></tr>`
             });
@@ -57,10 +55,12 @@ class LobbyManager {
                     <div class="card" style="width: 18rem;">
                         <div class="card-body">
                             <h5 class="card-title">${room._name}</h5>
+                            <h6 class="card-rules">${giroMorto}</h6>
+                            <h6 class="card-rules">Carte: ${carte}</h6>
                             <table class="table" id="${room._id}-table">
                                 ${tableInner}
                             </table>
-                            <button class="btn btn-login btn-block" onclick="sendToServer.joinRoom('${room._id}')">Entra</button>
+                            <button class="btn btn-login btn-block" onclick="sendToServer.joinRoom('${room._id}')">Siediti</button>
                         </div>
                     </div>
                 </div>
