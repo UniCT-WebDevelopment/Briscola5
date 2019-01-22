@@ -37,8 +37,13 @@
         document.getElementById('user-winloserate').innerText = `W: ${response.row.win} - L ${response.row.lose}`;
         window.user = response.row;
         if (response.idroom !== "0") {
-            socket.emit("reconnect-server", response);
+            changeView('loading_screen');
+            setTimeout(() => {
+                console.log("Entrato in timeout");
+                socket.emit("reconnect-server", response);
+            }, 5000);
         } else {
+            //changeView('loading_screen');
             socket.emit('request-room-status', response.row.username);
         }
     };
@@ -46,6 +51,13 @@
     xhr.send();
 
 </script>
+
+<div id="loading_screen" class="view hidden" style="background-color: #1b1e21; text-align: center">
+    <div class="container-fluid">
+        <p><h1 style="color: #9fcdff">Wait for the redirect to the game</h1></p>
+        <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
+    </div>
+</div>
 
 <div id="game_screen" class="view hidden">
     <div class="container-fluid">
@@ -238,7 +250,7 @@
                     <span class="outline end-right" id="match-result"></span>
                     <span class="outline end-left" id="you-result">YOU</span>
                 </div>
-                <div class="row align-items-center" style="height:20%; max-height: 50%">
+                <div class="row align-items-center" id="final-table" style="height:20%; max-height: 50%">
                     <!-- Row of the table with players results -->
                     <table id="table-results" style="width:100%; text-align: center">
                         <tr>
@@ -350,7 +362,7 @@
                                 <div class="modal-footer">
                                     <div class="form-group m-2">
                                         <button class="btn btn-send" onclick="lobby.createRoom()" data-dismiss="modal">
-                                            Invia
+                                            Done
                                         </button>
                                     </div>
                                 </div>

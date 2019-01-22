@@ -215,12 +215,12 @@ class Room {
         this._carteTavoloGiroMorto = value;
     }
 
-    get chiamataTimer() {
-        return this._chiamataTimer;
+    get callTimer() {
+        return this._callTimer;
     }
 
-    set chiamataTimer(value) {
-        this._chiamataTimer = value;
+    set callTimer(value) {
+        this._callTimer = value;
     }
 
     constructor() {
@@ -228,7 +228,7 @@ class Room {
         this._playerInside = [];
         this._roomStatus = 'open';
         this._gamePhase = 'idle';
-        this._oldGamePhase = 'idle';
+        this._oldGamePhase = this._gamePhase;
         this._rules = {};
         this._name = '';
         this._deck = [];
@@ -241,7 +241,7 @@ class Room {
         this._punteggio = 0;
         this._compagno;
         this._disconnesso = [];
-        this._chiamataTimer = 0;
+        this._callTimer = 0;
         this._disc;
         this._time;
         this._timerGame;
@@ -293,7 +293,7 @@ class Room {
     }
 
     changeOldGamePhase(phase) {
-        this._oldGamePhase = phase;
+        this._oldGamePhase = this._gamePhase;
     }
 
 }

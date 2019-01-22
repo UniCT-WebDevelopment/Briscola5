@@ -60,7 +60,7 @@ class LobbyManager {
                             <table class="table" id="${room._id}-table">
                                 ${tableInner}
                             </table>
-                            <button class="btn btn-login btn-block" onclick="sendToServer.joinRoom('${room._id}')">Siediti</button>
+                            <button class="btn btn-login btn-block" onclick="sendToServer.joinRoom('${room._id}')">Sit Down</button>
                         </div>
                     </div>
                 </div>

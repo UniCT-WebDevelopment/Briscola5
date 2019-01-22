@@ -81,7 +81,7 @@ class GameManager {
                         document.getElementById('cardsT').style.display = "block";
                     }
                     let scegliCartaDiv = document.createElement('div');
-                    scegliCartaDiv.setAttribute("id", "scegli"); //TODO controllare se scegli serve o meno
+                    scegliCartaDiv.setAttribute("id", "scegli");
                     for (let c = 0; c < 40; c++) {
                         let cartaImg = document.createElement('canvas');
                         cartaImg.className = "zoom";
@@ -213,7 +213,6 @@ class GameManager {
             case 'chiusura':
                 document.getElementById('gameoverModal').style.display = "block";
                 document.getElementById('match-result').innerText = room._risultato.indexOf(window.user.username) > -1 ? "WON!" : "LOST!";
-                //TODO sistemare la distanza delle scritte
                 document.getElementById('match-result').style.left = '-10%';
                 document.getElementById('you-result').style.left = '110%';
                 document.getElementById('match-result').velocity({left: '50%'}, 'easeOutExpo', 1200);
@@ -226,13 +225,20 @@ class GameManager {
                 let players = room._playerInside;
                 if (index !== 0) {
                     for (let i = 0; i < 5; i++) {
-                        if (i !== chiamante && i !== compagno) {
+                        if(room._risultato.indexOf(players[i].player.username) > -1){
+
+                        } else {
                             tmp.push(players[i].player.username);
                         }
                     }
                 }
 
-                document.getElementById('caller').innerHTML = "";
+                console.log('chiamante: ' + chiamante);
+                console.log('compagno: ' + compagno);
+                console.log('tmp: ' + tmp);
+                console.log('risultato: ' + room._risultato);
+
+                document.getElementById('call').innerHTML = "";
                 document.getElementById('caller-mate').innerHTML = "";
                 document.getElementById('first').innerHTML = "";
                 document.getElementById('second').innerHTML = "";
@@ -240,13 +246,12 @@ class GameManager {
                 document.getElementById('duo-points').innerHTML = "";
                 document.getElementById('trio-points').innerHTML = "";
 
-                //TODO aggiungere il controllo per l attivazione solo in caso di fine partita oppure vedere
                 if (index === 2) {
                     document.getElementById('trio').style.color = 'red';
                     let ni = document.createElement("I");
                     let tex = document.createTextNode(room._risultato[0]);
                     ni.appendChild(tex);
-                    document.getElementById('caller').appendChild(ni);
+                    document.getElementById('call').appendChild(ni);
                     tex = document.createTextNode(room._risultato[1]);
                     let nni = document.createElement("I");
                     nni.appendChild(tex);
@@ -280,21 +285,13 @@ class GameManager {
                     let mmi = document.createElement("I");
                     tex = document.createTextNode(tmp[0]);
                     mmi.appendChild(tex);
-                    document.getElementById('caller').appendChild(mmi);
+                    document.getElementById('call').appendChild(mmi);
                     let vi = document.createElement("I");
                     tex = document.createTextNode(tmp[1]);
                     vi.appendChild(tex);
                     document.getElementById('caller-mate').appendChild(vi);
                 } else {
-                    document.getElementById('duo').style.color = 'red';
-                    document.getElementById('trio').style.color = 'red';
-                    let ni = document.createElement("I");
-                    let tex = document.createTextNode(room._risultato[0]);
-                    ni.appendChild(tex);
-                    document.getElementById('caller').appendChild(ni);
-                    tex = document.createTextNode(room._risultato[1]);
-                    ni.appendChild(tex);
-                    document.getElementById('caller-mate').appendChild(ni);
+                    document.getElementById('final-table').innerText = '';
                 }
                 let punteggio = 120 - room._punteggio;
                 let ni = document.createElement('I');
@@ -547,7 +544,6 @@ let game = new GameManager(socket);
 
 socket.on('update-game-state', (data) => {
     localStorage.setItem('roomData', JSON.stringify(data));
+    localStorage.setItem('roomId', data._id);
     game.setState({room: data});
 });
-
-//TODO sistemare l update della schermata dopo il reload e sistemare le schermate (rimane su waiting players

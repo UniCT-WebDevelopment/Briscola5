@@ -53,6 +53,9 @@ sendToServer = {
         let data = {};
         data.username = username;
         data.password = password;
+        if(localStorage.roomId){
+            data.id = localStorage.getItem('roomId');
+        }
         let json = JSON.stringify(data);
 
         let xhr = new XMLHttpRequest();
@@ -62,6 +65,12 @@ sendToServer = {
             let response = JSON.parse(this.response);
             console.log(this.response);
             if (response !== "Username non trovato" && response !== "Password non corretta" && response !== "Utente già connesso") {
+                if (localStorage.roomId) {
+
+                } else {
+                    localStorage.setItem('username', data.username);
+                    localStorage.setItem('roomId', 0);
+                }
                 loginSuccess(response);
             } else {
                 loginError(this.responseText);
@@ -179,6 +188,8 @@ function loginSuccess(data){
             $('#dropdown-user-winloserate').html(`W: ${data.win} - L ${data.lose}`);
             if (data.idroom === "0") {
                 socket.emit('request-room-status');
+            } else {
+
             }
         }
     );
@@ -206,7 +217,7 @@ socket.on('request-confirmed', (data) => {
 
 socket.on('reconnect', (data) => {
     window.user = data.user;
-
+    console.log("RECONNECT");
     window.registeredRoom = data.id;
     changeView("game_screen");
     $('#app-container').load('game/lobby.html', () => {

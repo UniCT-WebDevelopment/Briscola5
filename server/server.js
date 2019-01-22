@@ -6,7 +6,7 @@
 var express = require('express');
 var app = express();
 var server = require('http').Server(app);
-var io = require('socket.io')(server);
+var io = require('socket.io')(server,{ pingTimeout: 120000, pingInterval: 100000 });
 var path = require('path');
 var bodyParser = require('body-parser');
 var Room = require('./room.js');
@@ -79,21 +79,6 @@ app.get('/', function (req, res) {
     if (req.session.user) {
         if (req.session.idroom !== '0' && !RoomState[req.session.idroom]) {
             req.session.idroom = '0';
-        } else {
-            if (req.session.idroom === '0') {
-                //Stay
-            } else {
-                let IDdisconnesso = RoomState[req.session.idroom].disconnesso.indexOf(req.session.user);
-                if (IDdisconnesso > -1) {
-                    RoomState[req.session.idroom].disconnesso.splice(IDdisconnesso, 1);
-                    if (RoomState[req.session.idroom].disconnesso.length === 0) {
-                        resetTimer(req.session.idroom).then(function () {
-                            let oldPhase = RoomState[req.session.idroom].oldGamePhase;
-                            RoomState[req.session.idroom].changeGamePhase(oldPhase);
-                        })
-                    }
-                }
-            }
         }
         let user_info = {};
         if (!connectedUsers.find(name => name.username === req.session.user)) {
@@ -164,20 +149,28 @@ app.post('/login-user', function (req, res) {
             res.send(err.sqlMessage);
             res.end();
         } else if (!rows.length) {
-            res.send(JSON.stringify("Username non trovato"));
+            res.send(JSON.stringify("Username not found"));
             res.end();
         }
         else if (!bcrypt.compareSync(req.body.password, rows[0].password)) {
-            res.send(JSON.stringify("Password non corretta"));
+                res.send(JSON.stringify("Password incorrect"));
             res.end();
         } else {
             if (connectedUsers.find(name => name.username === req.body.username)) {
-                res.send(JSON.stringify("Utente già connesso"));
+                res.send(JSON.stringify("User already connected"));
                 res.end();
             } else {
                 sess.row = rows[0];
                 sess.user = req.body.username;
-                sess.idroom = "0";
+                if(req.body.id){
+                    if (req.body.id !== '0' && !RoomState[req.body.id]) {
+                        req.session.idroom = '0';
+                    } else {
+                        sess.idroom = req.body.id;
+                    }
+                } else {
+                    sess.idroom = "0";
+                }
                 let user_info = {};
                 user_info.username = req.body.username;
                 user_info.sessionId = req.session.id;
@@ -227,8 +220,7 @@ io.on("connection", (socket) => {
      *  Almost useless currently
      */
 
-    socket.on('return-lobby', (data) => { //TODO Sistemare il return to game
-        console.log("DENTRO RETURN LOBBY")
+    socket.on('return-lobby', (data) => {
         sessionStore.get(socket.request.sessionID, function (err, data) {
             data.idroom = '0';
             sessionStore.sessions[socket.request.sessionID] = JSON.stringify(data);
@@ -288,12 +280,25 @@ io.on("connection", (socket) => {
      */
 
     socket.on('reconnect-server', (data) => {
+        console.log("REDIRECTED");
         socket.join(data.idroom);
         socket.username = data.row.username;
-        resetTimer(data.idroom).then(function () {
+        let IDdisconnesso = RoomState[data.idroom].disconnesso.indexOf(data.row.username);
+        if (IDdisconnesso > -1) {
+            //console.info('@#@#@#@#@@#@#@#@#@#@#@#@#@#@#@#@#@#@#@#@ -------------------------------> entrato', req.session.user);
+            RoomState[data.idroom].disconnesso.splice(IDdisconnesso, 1);
+            if (RoomState[data.idroom].disconnesso.length === 0) {
+                resetTimer(data.idroom).then(function () {
+                    let oldPhase = RoomState[data.idroom].oldGamePhase;
+                    RoomState[data.idroom].changeGamePhase(oldPhase);
+                    socket.emit('reconnect', {room: RoomState[data.idroom], user: data.row, id: data.idroom});
+                    emitUpdate(RoomState[data.idroom], data.idroom);
+                })
+            }
+        } else {
             socket.emit('reconnect', {room: RoomState[data.idroom], user: data.row, id: data.idroom});
             emitUpdate(RoomState[data.idroom], data.idroom);
-        });
+        }
     });
 
     /**
@@ -465,6 +470,10 @@ io.on("connection", (socket) => {
 
     socket.on('clickCard', (data) => {
         let iduser = -1;
+        if(RoomState[data.roomId].callTimer === 1){
+            clearTimeout(RoomState[data.roomId].time);
+        }
+
         for (let i = 0; i < 5; i++) {
             if (data.giocatore === RoomState[data.roomId].playerInside[i].player.username) {
                 iduser = i;
@@ -503,23 +512,22 @@ io.on("connection", (socket) => {
         emitUpdate(RoomState[data.roomId], data.roomId);
     }
 
-    socket.on('timer', (data) => { //Todo sistemare questa parte
+    socket.on('timer', (data) => {
         if (RoomState[data].timerGame) {
 
         } else {
-            RoomState[data].chiamataTimer = 1;
-            //io.sockets.in(data).emit('new_message_room', {message: "Timer attivato", username: "System"});
-            //RoomState[data].time = setTimeout(() => {
+            RoomState[data].callTimer = 1;
+            io.sockets.in(data).emit('new_message_room', {message: "Timer activated, 10 seconds before the random play", username: "System"});
+            RoomState[data].time = setTimeout(() => {
             randomThrow(data);
-            //}, 10000); //10 secondi prima del lancio automatico
+            }, 10000); //10 secondi prima del lancio automatico
         }
     });
 
     function randomThrow(room) {
-
         let iduser = -1;
         let user;
-        RoomState[room].chiamataTimer = 0;
+        RoomState[room].callTimer = 0;
         for (let i = 0; i < 5; i++) {
             if (RoomState[room].hand === RoomState[room].playerInside[i].player.username) {
                 user = RoomState[room].playerInside[i].player.username;
@@ -756,10 +764,12 @@ io.on("connection", (socket) => {
                     resolve(rows);
                 });
                 let data_user = connectedUsers.find(name => name.username === player.username);
-                sessionStore.get(data_user.sessionId, function (err, data) {
-                    data.idroom = '0';
-                    sessionStore.sessions[data_user.sessionId] = JSON.stringify(data);
-                });
+                if(data_user) {
+                    sessionStore.get(data_user.sessionId, function (err, data) {
+                        data.idroom = '0';
+                        sessionStore.sessions[data_user.sessionId] = JSON.stringify(data);
+                    });
+                }
             }
         });
     }
@@ -769,6 +779,7 @@ io.on("connection", (socket) => {
         recordModifier(data).then(function (rows) {
             emitUpdate(RoomState[data], data);
             setTimeout(() => {
+                console.log("STANZA DISTRUTTA!!!!!!");
                 delete RoomState[data];
             }, 5000);
         }).catch((err) => setImmediate(() => {
@@ -779,27 +790,32 @@ io.on("connection", (socket) => {
     socket.on('give-up', (data) => {
         close(data);
     });
-
+    /*socket.on('disconnect', reason => {
+        console.log(`reason: ${reason}`);
+    });*/
     socket.on("disconnect", () => {
-        console.info(`[SOCKET][INFO] Client disconnesso! [id = ${socket.id}] [username = ${socket.username}]`);
-        console.dir(connectedUsers);
-        if (socket.username) {
+        setTimeout(() => {
 
-        }
-        getRoom().then(function (room) {
-            if (!RoomState[room]) {
+            console.info(`[SOCKET][INFO] Client disconnesso! [id = ${socket.id}] [username = ${socket.username}]`);
+            console.dir(connectedUsers);
+            if (socket.username) {
                 let data = connectedUsers.find(name => name.username === socket.username);
                 connectedUsers.splice(connectedUsers.indexOf(data), 1);
-            } else {
-                setTimeout(function () {
+            }
+            getRoom().then(function (room) {
+                if (!RoomState[room]) {
+                    let data = connectedUsers.find(name => name.username === socket.username);
+                    connectedUsers.splice(connectedUsers.indexOf(data), 1);
+                } else {
                     if (connectedUsers.find(name => name.username === socket.username)) {
 
                     } else {
                         console.dir(connectedUsers);
+                        console.log("dentro else disconnessione");
                         discHandle(room, socket.username);
                     }
-                }, 2000);
-            }
-        })
+                }
+            })
+        }, 2000)
     });
 });
