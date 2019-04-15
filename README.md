@@ -84,9 +84,13 @@ The project consists of 2 main folders: client and server.
 Carmelo Buscemi
 
 ### With the help of
+
 Nunzio Mio
+
 Andrea Longhitano
+
 Filippo Alfio Cicolò
+
 Alessandra Di Fiore
 
 ### Contacts
