@@ -16,6 +16,7 @@ From git repository:
 `$ git clone https://github.com/UniCT-WebDevelopment/Briscola5 name`
 Target directory is called 'name' (it can be omitted).
 To start server:
+
 `npm start`
 
 You need to have a MySQL Database on port *8846*.
