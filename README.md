@@ -9,7 +9,9 @@ See: https://www.pagat.com/aceten/briscola_chiamata.html
 ## Getting Started
 
 The code is written in nodejs: '10.13.0';
+
 package manager npm: '6.4.1';
+
 Tested on Linux 4.15.0-43-generic x86_64.
 
 From git repository:
