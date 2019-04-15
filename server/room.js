@@ -223,6 +223,39 @@ class Room {
         this._callTimer = value;
     }
 
+
+    get timerGame() {
+        return this._timerGame;
+    }
+
+    set timerGame(value) {
+        this._callTimer = value;
+    }
+
+    get creator() {
+        return this._creator;
+    }
+
+    set creator(value) {
+        this._creator = value;
+    }
+
+    get kicked() {
+        return this._kicked;
+    }
+
+    set kicked(value) {
+        this._kicked = value;
+    }
+
+    get pointsHand() {
+        return this._pointsHand;
+    }
+
+    set pointsHand(value) {
+        this._pointsHand = value;
+    }
+
     constructor() {
         this._id = Date.now() + Math.floor(Math.random() * 1000000000);
         this._playerInside = [];
@@ -245,6 +278,7 @@ class Room {
         this._disc;
         this._time;
         this._timerGame;
+        this._kicked = [];
         this._turniDiChiamata = 0;
         this._cartaChiamata = -1;
         this._carteTavolo = [];
@@ -255,12 +289,14 @@ class Room {
             this._deck.push(i);
         }
         this._briscola = -1;
+        this._creator = 0;
         this._abbandono = 0;
         this._ordine = [1, 3, 4, 5, 6, 7, 8, 9, 2, 0];
         this._risultato = [];
         this._levelup = [];
         this._carteTavoloGiroMorto = [];
         this._nome = "";
+        this._pointsHand = -1;
         this._mazzoDiCarte = ["Asso di Coppe","Due di Coppe","Tre di Coppe","Quattro di Coppe","Cinque di Coppe","Sei di Coppe","Sette di Coppe","Donna di Coppe","Cavallo di Coppe","Re di Coppe",
             "Asso di Oro","Due di Oro","Tre di Oro","Quattro di Oro","Cinque di Oro","Sei di Oro","Sette di Oro","Donna di Oro","Cavallo di Oro","Re di Oro",
             "Asso di Bastoni","Due di Bastoni","Tre di Bastoni","Quattro di Bastoni","Cinque di Bastoni","Sei di Bastoni","Sette di Bastoni","Donna di Bastoni","Cavallo di Bastoni","Re di Bastoni",

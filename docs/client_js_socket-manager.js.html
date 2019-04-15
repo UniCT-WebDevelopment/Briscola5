@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: client/js/request-manager.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: client/js/request-manager.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @since 1.0.0
+ * @author Ismaele Benbachir
+ *
+ * @type {{registerUser: sendToServer.registerUser, loginUser: sendToServer.loginUser, logout: sendToServer.logout, joinRoom: sendToServer.joinRoom}}
+ */
+sendToServer = {
+    /**
+     * Send information to server for registration
+     * Use of XMLHttpRequest
+     * @param username {string}
+     * @param password {string}
+     */
+
+    registerUser: () => {
+        let username = document.getElementById('r_username').value,
+            password = document.getElementById('r_password').value;
+        $('input[type="text"]').val('');
+        $('input[type="password"]').val('');
+        let url = "http://localhost:3000/register-user";
+
+        let data = {};
+        data.username = username;
+        data.password = password;
+        let json = JSON.stringify(data);
+
+        let xhr = new XMLHttpRequest();
+        xhr.open("POST", url, true);
+        xhr.setRequestHeader('Content-type','application/json; charset=utf-8');
+        xhr.onload = function () {
+            if(this.responseText === 'Done'){
+                registrationSuccess('Successfully Registered');
+            } else {
+                registrationError(this.response);
+            }
+        };
+        xhr.send(json);
+    },
+
+    /**
+     * Send information to server for login
+     * Use of XMLHttpRequest
+     * @param username {string}
+     * @param password {string}
+     */
+
+    loginUser: () => {
+        let username = document.getElementById('username').value,
+            password = document.getElementById('password').value;
+
+        let url = "http://localhost:3000/login-user";
+
+        let data = {};
+        data.username = username;
+        data.password = password;
+        let json = JSON.stringify(data);
+
+        let xhr = new XMLHttpRequest();
+        xhr.open("POST", url, true);
+        xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
+        xhr.onload = function () {
+            let response = JSON.parse(this.response);
+            console.log(this.response);
+            if (response !== "Username non trovato" &amp;&amp; response !== "Password non corretta" &amp;&amp; response !== "Utente già connesso") {
+                loginSuccess(response);
+            } else {
+                loginError(this.responseText);
+            }
+        };
+        xhr.send(json);
+    },
+
+    /**
+     * Send information to server for logout
+     * Use of XMLHttpRequest for session
+     */
+
+    logout: () =>{
+        let url = "http://localhost:3000/logout";
+
+        let xhr = new XMLHttpRequest();
+        xhr.open("POST", url, true);
+        xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
+        xhr.onload = function () {
+            location.reload(true);
+        };
+
+        xhr.send();
+    },
+    //TODO Da cancellare
+    /*
+    requestUser: () =>{
+        let xhr = new XMLHttpRequest();
+        let url = "http://localhost:3000/request-user";
+        xhr.open("POST", url, true);
+        xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
+        xhr.onload = function () {
+            loginSuccess(this.response);
+        };
+        xhr.send();
+    },*/
+
+    /**
+     * Request to join a room in server
+     * @param room {string}
+     */
+
+    joinRoom: (room) => {
+        let data = {
+            user: window.user,
+            room: room
+        };
+        socket.emit('request-join-room', data)
+    }
+};
+
+/**
+ * Function message for registration
+ * @param msg {string}
+ */
+
+function registrationSuccess(msg) {
+    let target = document.getElementById('alert-output');
+    target.innerHTML = `
+    &lt;div class="alert alert-success alert-dismissible fade show" role="alert">
+        &lt;button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            &lt;span aria-hidden="true">&amp;times;&lt;/span>
+        &lt;/button>
+        &lt;strong>${msg}&lt;/strong>
+    &lt;/div>
+    `;
+};
+
+/**
+ * Function message for registration error
+ * @param msg {string}
+ */
+
+function registrationError(msg) {
+    let target = document.getElementById('alert-output');
+    target.innerHTML = `
+    &lt;div class="alert alert-danger alert-dismissible fade show" role="alert">
+        &lt;button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            &lt;span aria-hidden="true">&amp;times;&lt;/span>
+        &lt;/button>
+        &lt;strong>${msg}&lt;/strong>
+    &lt;/div>
+    `;
+};
+
+/**
+ * Function message for login error
+ * @param msg {string}
+ */
+
+function loginError(msg){
+    let target = document.getElementById('alert-output');
+    target.innerHTML = `
+    &lt;div class="alert alert-danger alert-dismissible fade show" role="alert">
+        &lt;button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            &lt;span aria-hidden="true">&amp;times;&lt;/span>
+        &lt;/button>
+        &lt;strong>${msg}&lt;/strong>
+    &lt;/div>
+    `;
+};
+
+/**
+ * Function message for login
+ * @param data {string}
+ */
+
+function loginSuccess(data){
+    window.user = data;
+    $('#app-container').load('game/lobby.html', () => {
+            $('#navbarDropdown').html(data.username);
+            $('#dropdown-user-level').html(`Livello: ${data.level}`);
+            $('#dropdown-user-score').html(`Punti: ${data.score}`);
+            $('#dropdown-user-winloserate').html(`W: ${data.win} - L ${data.lose}`);
+            if (data.idroom === "0") {
+                socket.emit('request-room-status');
+            }
+        }
+    );
+};
+
+
+/**
+ * After create room from server
+ * Change view in lobby.html
+ * @param data {string}
+ */
+
+socket.on('request-confirmed', (data) => {
+    window.registeredRoom = data;
+    changeView("game_screen");
+    game.init();
+});
+
+/**
+ * From server for reconnect-server
+ * @param room {string}
+ * @param user {} All row from database or session
+ * @param id {string}
+ */
+
+socket.on('reconnect', (data) => {
+    window.user = data.user;
+
+    window.registeredRoom = data.id;
+    changeView("game_screen");
+    $('#app-container').load('game/lobby.html', () => {
+        game.setState({room: data.room});
+        game.render();
+    });
+});
+
+/**
+ * Find view with class active;
+ * remove active class and use hidden;
+ * Give active to view: id=idView from function
+ * @since 1.0.0
+ * @author Mini Me
+ * @param idView {string}
+ */
+function changeView(idView) {
+    /*
+    trovare la view che ha classe active
+    rimuoverla
+    assegnare la hidden
+    assegnare active alla view che ha id = idView
+    */
+    var viewActive = $(".view.active")[0];
+    $(viewActive).removeClass("active");
+    $(viewActive).addClass("hidden");
+
+    var nextView = $("#" + idView);
+    $(nextView).removeClass("hidden");
+    $(nextView).addClass("active");
+}
+
+
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Popper.html">Popper</a></li></ul><h3>Namespaces</h3><ul><li><a href="modifiers.html">modifiers</a></li></ul><h3>Global</h3><ul><li><a href="global.html#changeView">changeView</a></li><li><a href="global.html#connection">connection</a></li><li><a href="global.html#dataObject">dataObject</a></li><li><a href="global.html#express">express</a></li><li><a href="global.html#loginError">loginError</a></li><li><a href="global.html#loginSuccess">loginSuccess</a></li><li><a href="global.html#modal">modal</a></li><li><a href="global.html#ModifierFn">ModifierFn</a></li><li><a href="global.html#move">move</a></li><li><a href="global.html#referenceObject">referenceObject</a></li><li><a href="global.html#registrationError">registrationError</a></li><li><a href="global.html#registrationSuccess">registrationSuccess</a></li><li><a href="global.html#resetTimer">resetTimer</a></li><li><a href="global.html#sendToServer">sendToServer</a></li><li><a href="global.html#sessionMiddleware">sessionMiddleware</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Mon Jan 07 2019 13:02:31 GMT+0100 (GMT+01:00)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

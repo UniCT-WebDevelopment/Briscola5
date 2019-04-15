@@ -219,3 +219,14 @@ p.message {
     font-family: 'Comfortaa', sans-serif;
     padding: 1vh;
 }
+
+#my-cards{
+    position: fixed;
+    bottom:52px;
+}
+
+@media (min-width: 1366px) {
+    #my-cards{
+        bottom: 104px;
+    }
+}

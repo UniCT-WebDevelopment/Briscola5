@@ -19,7 +19,6 @@
     <script src="js/chat-lobby.js"></script>
 </head>
 <body>
-
 <div id="app-container">
         <img src="assets/images/home-bg.jpg" class="home-bg">
         <div class="container">
@@ -36,7 +35,7 @@
                     <input type="password" class="form-control" id="password" name="password" placeholder="Password"
                            required>
                     <hr/>
-                    <button type="submit" class="btn btn-block btn-login" onclick="sendToServer.loginUser()"
+                    <button type="submit" class="btn btn-block btn-login" id="send_login" onclick="sendToServer.loginUser()"
                             title="Login">
                         Login
                     </button>
@@ -47,9 +46,9 @@
                            maxlength="16" required>
                     <input type="password" class="form-control" id="r_password" name="password"
                            placeholder="Password"
-                           maxlength="8" required>
+                           maxlength="16" required>
                     <hr/>
-                    <button type="submit" class="btn btn-login" onclick="sendToServer.registerUser()">Sign in
+                    <button type="submit" class="btn btn-login" id="send_reg" onclick="sendToServer.registerUser()">Sign in
                     </button>
 
                 </div>
@@ -57,7 +56,23 @@
             <br>
         </div>
 </div>
+<script>
+    var input = document.getElementById("password");
+    input.addEventListener("keyup", function(event) {
+        if (event.keyCode === 13) {
+            event.preventDefault();
+            document.getElementById("send_login").click();
+        }
+    });
 
+    var input2 = document.getElementById("r_password");
+    input2.addEventListener("keyup", function(event) {
+        if (event.keyCode === 13) {
+            event.preventDefault();
+            document.getElementById("send_reg").click();
+        }
+    });
+</script>
 <footer class="footer">
     <p>Ismaele Benbachir - X81000345</p>
 </footer>

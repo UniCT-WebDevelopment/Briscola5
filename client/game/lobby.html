@@ -2,60 +2,28 @@
     <meta charset="UTF-8">
     <title>Bri5cola</title>
     <link rel="shortcut icon" href="./assets/images/icona1.png" type="image/x-icon"/>
-    <script src="js/lib/jquery-3.3.1.js"></script>
-    <script src="js/lib/popper.min.js"></script>
-    <script src="js/lib/bootstrap.js"></script>
-    <script src="js/lib/velocity.min.js"></script>
-    <script src="js/lib/socket.io.js"></script>
-    <script src="js/socket-config.js"></script>
-    <script src="js/request-manager.js"></script>
+    <link rel="shortcut icon" href="./assets/images/carte_sic.png"/>
     <link rel="stylesheet" href="css/lib/bootstrap.css">
     <link rel="stylesheet" href="css/lib/component-custom-switch.min.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <script src="../js/lobby-manager.js"></script>
-    <script src="../js/game-manager.js"></script>
-    <script src="../js/chat-lobby.js"></script>
 
 
 </head>
 
 <body>
 
-<script>
-    let url = "http://localhost:3000/request-user";
-
-    let xhr = new XMLHttpRequest();
-    xhr.open("POST", url, true);
-    xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
-    xhr.onload = function () {
-        let response = JSON.parse(this.response);
-        socket.username = response.row.username;
-        document.getElementById('user-name').innerText = ` ${response.row.username}`;
-        document.getElementById('user-level').innerText = `Level: ${response.row.level}`;
-        document.getElementById('user-score').innerText = `Points: ${response.row.score}`;
-        document.getElementById('user-winloserate').innerText = `W: ${response.row.win} - L ${response.row.lose}`;
-        window.user = response.row;
-        if (response.idroom !== "0") {
-            changeView('loading_screen');
-            setTimeout(() => {
-                console.log("Entrato in timeout");
-                socket.emit("reconnect-server", response);
-            }, 5000);
-        } else {
-            //changeView('loading_screen');
-            socket.emit('request-room-status', response.row.username);
-        }
-    };
-
-    xhr.send();
-
-</script>
 
 <div id="loading_screen" class="view hidden" style="background-color: #1b1e21; text-align: center">
     <div class="container-fluid">
-        <p><h1 style="color: #9fcdff">Wait for the redirect to the game</h1></p>
-        <div class="lds-ring"><div></div><div></div><div></div><div></div></div>
+        <p>
+        <h1 style="color: #9fcdff">Wait for the redirect</h1></p>
+        <div class="lds-ring">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
     </div>
 </div>
 
@@ -72,10 +40,12 @@
                     <div>
                         <div class="player" id="player2"></div>
                         <div class="prova"><img class="coppola" id="cop2" src="../assets/images/coppola1.png"></div>
+                        <div class="call2 speech-bubble" id="val2">xx</div>
                     </div>
                     <div>
                         <div class="player" id="player1"></div>
                         <div class="prova"><img class="coppola" id="cop1" src="../assets/images/coppola1.png"></div>
+                        <div class="call1 speech-bubble" id="val1">xx</div>
                     </div>
 
                     <div class="player" style="opacity: 0"></div>
@@ -84,6 +54,7 @@
                     <div>
                         <div class="player" id="player3"></div>
                         <div class="prova"><img class="coppola" id="cop3" src="../assets/images/coppola1.png"></div>
+                        <div class="call3 speech-bubble" id="val3">xx</div>
                     </div>
 
                     <div class="table-game" id="table">
@@ -118,11 +89,11 @@
                             </div>
 
                         </div>
-
                     </div>
                     <div>
                         <div class="player" id="player0"></div>
                         <div class="prova"><img class="coppola" id="cop0" src="../assets/images/coppola1.png"></div>
+                        <div class="call0 speech-bubble" id="val0">xx</div>
                     </div>
                 </div>
                 <div class="d-flex flex-row justify-content-around">
@@ -131,6 +102,7 @@
                             <li>You</li>
                         </div>
                         <div class="prova"><img class="coppola" id="cop4" src="../assets/images/coppola1.png"></div>
+                        <div class="call4 speech-bubble" id="val4">xx</div>
                     </div>
                 </div>
                 <div class="d-flex flex-row justify-content-around">
@@ -148,6 +120,9 @@
                         </button>
                         <button class="tablinks" id="chat-button" onclick="openTab(event, 'chat-game-tab')"><i
                                 class="fa fa-commenting-o"></i> Chat
+                        </button>
+                        <button class="tablinks" id="room-check" onclick="openTab(event, 'room-tab')"><i
+                                class="fa fa-times-circle-o"></i> Room
                         </button>
                     </div>
 
@@ -182,9 +157,44 @@
                             <div class="input-group chat-input">
                                 <input type="text" maxlength="250" minlength="10" id="chat_game_input"
                                        class="form-control">
-                                <input type="button" class="btn chat-btn" onclick="chat_send_message_room()"
+                                <input type="button" class="btn chat-btn" id="chat_game_send" onclick="chat_send_message_room()"
                                        title="Send" value="Send">
                             </div>
+                        </div>
+                    </div>
+
+                    <div id="room-tab" class="tabcontent">
+                        <div id="room-game">
+                            <table>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Kick</th>
+                                </tr>
+                                <tr id="use1" style="display: none">
+                                    <td>
+                                        <button class="fa fa-times-circle-o" onclick="game.kick(1)"></button>
+                                    </td>
+                                    <td id="us1"></td>
+                                </tr>
+                                <tr id="use2" style="display: none">
+                                    <td>
+                                        <button class="fa fa-times-circle-o" onclick="game.kick(2)"></button>
+                                    </td>
+                                    <td id="us2"></td>
+                                </tr>
+                                <tr id="use3" style="display: none">
+                                    <td>
+                                        <button class="fa fa-times-circle-o" onclick="game.kick(3)"></button>
+                                    </td>
+                                    <td id="us3"></td>
+                                </tr>
+                                <tr id="use4" style="display: none">
+                                    <td>
+                                        <button class="fa fa-times-circle-o" onclick="game.kick(4)"></button>
+                                    </td>
+                                    <td id="us4"></td>
+                                </tr>
+                            </table>
                         </div>
                     </div>
 
@@ -197,15 +207,18 @@
                         </div>
                     </div>
                 </div>
-                <div class="middlediv">
-                    <div id="winnerRound"></div>
-                    <div id="currentPlayer"></div> <!-- Quale utente deve giocare -->
-                    <div id="sceltaChiamata"></div>
+                <div class="game-right-side">
+                        <div id="winnerRound" style="color: green"></div>
+                        <div id="currentPlayer" style="color: red"></div>
+                        <div id="valueHand" style="color: red; display: none"></div> <!-- Quale utente deve giocare -->
+                        <div id="valueLastHand" style="color: darkblue; display: none"></div>
+                        <div id="sceltaChiamata"></div>
+
                 </div>
+
                 <div class="bottomdiv">
                     <div id="'abbandonoTesto"></div>
                     <button id="give-up-button" onclick="game.giveUpMatch()">Give Up</button>
-                    <button id="timer-button" onclick="game.startTimer()">Start Timer</button>
                 </div>
                 <div id="output"></div>
 
@@ -229,7 +242,8 @@
             <!-- Modal content -->
             <div class="disconnection-modal-content">
                 <span class="close">&times;</span>
-                <h1 style="color: #9fcdff; align-content: center">A player has disconnected! Timeout before the end of the game
+                <h1 style="color: #9fcdff; align-content: center">A player has disconnected! Timeout before the end of
+                    the game
                 </h1>
                 <br><br>
                 <img id="load" src="../assets/images/giphy.gif">
@@ -243,34 +257,39 @@
             </div>
         </div>
 
-        <div id="gameoverModal" class="modal">
+        <div id="gameoverModal" class="modal-game-over">
             <!-- Modal content -->
             <div class="game-over-modal-content">
                 <div class="row" style="height:20%">
                     <span class="outline end-right" id="match-result"></span>
                     <span class="outline end-left" id="you-result">YOU</span>
                 </div>
-                <div class="row align-items-center" id="final-table" style="height:20%; max-height: 50%">
+                <div class="row align-items-center" id="final-table" style="max-height: 50%">
                     <!-- Row of the table with players results -->
                     <table id="table-results" style="width:100%; text-align: center">
                         <tr>
-                            <td id="duo" width="50%" style="font-size: 4rem"><span class="fa fa-user caller" id="caller"></span><span
+                            <td id="duo" width="50%" style="font-size: 4rem"><span class="fa fa-user caller"
+                                                                                   id="caller"></span><span
                                     class="fa fa-user caller" id="mate"></span></td>
-                            <td style="font-size: 2rem"><span id="call"></span><span>--</span><span id="caller-mate"></span></td>
+                            <td style="font-size: 2rem"><span id="call"></span><span>--</span><span
+                                    id="caller-mate"></span></td>
                             <td><span id="duo-points" style="font-size: 3rem"></span>/120</td>
                         </tr>
                         <tr>
                             <td id="trio" style="font-size: 4rem;"><span class="fa fa-user"></span><span
                                     class="fa fa-user"></span><span class="fa fa-user"></span></td>
-                            <td style="font-size: 2rem"><span id="first"></span><span>--</span><span id="second"></span><span>--</span><span id="third"></span></td>
+                            <td style="font-size: 2rem"><span id="first"></span><span>--</span><span id="second"></span><span>--</span><span
+                                    id="third"></span></td>
                             <td><span id="trio-points" style="font-size: 3rem"></span>/120</td>
                         </tr>
                     </table>
 
                 </div>
-                <div class="row align-items-center">
+                <div class="row align-items-center" style="padding: 10px">
                     <!-- Row with return lobby button -->
-                    <button type="button" style="margin:auto;" class="btn btn-lg" onclick="location.href='/' ">Return to lobby</button>
+                    <button type="button" style="margin:auto;" class="btn btn-lg" onclick="finish()">Return to
+                        lobby
+                    </button>
                 </div>
                 <!-- Bad sounds -->
                 <audio src="../assets/sounds/nsmb_death.wav" id="lose"></audio>
@@ -292,136 +311,298 @@
     </div>
 </div>
 
-    <div id="lobby_screen" class="view active">
+<div id="lobby_screen" class="view active">
 
-        <div class="navbar">
-            <a class="navbar-brand" href="">
-                <img src="../assets/images/logo.png" width="192px" height="56px" alt="Bri5cola"> <!--60-30-->
-            </a>
-            <div class="topnav-right">
-                <!-- Settings for future updates -->
-                <button class="navbtn" data-toggle="tooltip" data-placement="bottom" title="Settings"
-                        style="font-size:150%; min-width: 5rem"><span><i class="fa fa-gears" style="font-size:100%"></i> Settings</span>
-                </button>
-                <button class="navbtn" href="/logout" data-toggle="tooltip" onclick="sendToServer.logout()"
-                        data-placement="bottom" title="Log out"
-                        style="font-size:150%; min-width: 5rem"><span><i class="fa fa-user-times" style="font-size:100%"
-                ></i> Log out</span>
-                </button>
-            </div>
+    <div class="navbar">
+        <a class="navbar-brand" href="">
+            <img src="../assets/images/logo.png" width="192px" height="56px" alt="Bri5cola"> <!--60-30-->
+        </a>
+        <div class="topnav-right">
+            <!-- Settings for future updates -->
+            <button class="navbtn" data-toggle="tooltip" data-placement="bottom" title="Settings"
+                    style="font-size:150%; min-width: 5rem"><span><i class="fa fa-gears" style="font-size:100%"></i> Settings</span>
+            </button>
+            <button class="navbtn" href="/logout" data-toggle="tooltip" onclick="sendToServer.logout()"
+                    data-placement="bottom" title="Log out"
+                    style="font-size:150%; min-width: 5rem"><span><i class="fa fa-user-times" style="font-size:100%"
+            ></i> Log out</span>
+            </button>
         </div>
+    </div>
 
 
-        <div class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel">
-            <div class="modal-dialog modal-lg" role="document">
-                <div class="modal-content">
-                    ...
-                </div>
-            </div>
-        </div>
-
-        <div class="container-fluid">
-            <div class="row lobby-container">
-                <!-- STANZE -->
-                <div class="col-9">
-                    <br>
-                    <!-- Trigger the modal with a button -->
-                    <button type="button" class="btn btn-lg" id="btn-room-create" data-toggle="modal"
-                            data-target="#myModalRoom"><i class="fa fa-group" style="font-size:100%"></i> Create Room
-                    </button>
-
-                    <!-- Modal -->
-                    <div class="modal fade" id="myModalRoom" role="dialog" data-backdrop="false">
-                        <div class="modal-dialog">
-
-                            <!-- Modal content-->
-                            <div class="modal-content" style="width: 100%; margin: auto">
-                                <div class="modal-header">
-                                    <h4 class="modal-title">Room Settings</h4>
-                                    <button type="button" class="close" data-dismiss="modal">&times;</button>
-                                </div>
-                                <div class="modal-body">
-                                    <div class="form-group m-2">
-                                        <label for="room-name" class="badge">Room Name</label>
-                                        <input type="text" class="form-control" id="room-name">
-                                    </div>
-                                    <div class="form-group m-2 custom-switch custom-switch-label-yesno">
-                                        <label for="room-giro" class="badge">'Giro Morto'?</label> <br>
-                                        <input type="checkbox" class="custom-switch-input" id="room-giro">
-                                        <label class="custom-switch-btn" for="room-giro"></label>
-
-                                    </div>
-                                    <div class="form-group m-2">
-                                        <label for="room-card-type" class="badge">Cards Type</label>
-                                        <select name="card-type" class="form-control" id="room-card-type">
-                                            <option value="siciliane">Siciliane</option>
-                                            <option value="napoletane">Napoletane</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <div class="form-group m-2">
-                                        <button class="btn btn-send" onclick="lobby.createRoom()" data-dismiss="modal">
-                                            Done
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-                    <!--<hr>-->
-                    <div class="rooms-area" id="rooms-area">
-                    </div>
-
-                </div>
-                <!-- CHAT -->
-                <div class="col-3 chat-bg">
-                    <div class=" align-items-center user-info-card">
-                        <h3 class="user-info-head"><span><i class="fa fa-id-badge"></i></span><b id="user-name">-</b>
-                        </h3>
-                        <p class="user-info-row" id="user-level">-</p>
-                        <p class="user-info-row" id="user-score">-</p>
-                        <p class="user-info-row" id="user-winloserate">-</p>
-
-                    </div>
-                    <div class="chat">
-                        <div class="chat-messages" id="chat"></div>
-                        <div class="input-group chat-input">
-                            <input type="text" maxlength="250" minlength="1" id="chat_input" class="form-control">
-                            <input type="button" class="btn chat-btn" onclick="chat_send_message()" title="Invia"
-                                   value="Invia">
-                        </div>
-                    </div>
-
-
-                </div>
+    <div class="modal fade bs-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                ...
             </div>
         </div>
     </div>
 
-    <script>
-        function openTab(evt, tabName) {
-            var i, tabcontent, tablinks;
-            tabcontent = document.getElementsByClassName("tabcontent");
+    <div class="container-fluid">
+        <div class="row lobby-container">
+            <!-- STANZE -->
+            <div class="col-9">
+                <br>
+                <!-- Trigger the modal with a button -->
+                <button type="button" class="btn btn-lg" id="btn-room-create" data-toggle="modal"
+                        data-target="#myModalRoom"><i class="fa fa-group" style="font-size:100%"></i> Create Room
+                </button>
 
-            for (i = 0; i < tabcontent.length; i++) {
-                tabcontent[i].style.display = "none";
-            }
-            tablinks = document.getElementsByClassName("tablinks");
-            for (i = 0; i < tablinks.length; i++) {
-                tablinks[i].className = tablinks[i].className.replace(" active", "");
-            }
-            document.getElementById(tabName).style.display = "block";
-            evt.currentTarget.className += " active";
-            if (tabName === 'chat-game-tab') {
-                let ci = document.getElementById('chat-button');
-                ci.classList.remove("prova2");
-            }
+                <!-- Modal -->
+                <div class="modal fade" id="myModalRoom" role="dialog" data-backdrop="false">
+                    <div class="modal-dialog">
+
+                        <!-- Modal content-->
+                        <div class="modal-content" style="width: 100%; margin: auto">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Room Settings</h4>
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group m-2">
+                                    <label for="room-name" class="badge">Room Name</label>
+                                    <input type="text" class="form-control" id="room-name">
+                                </div>
+                                <div class="form-group m-2 custom-switch custom-switch-label-yesno">
+                                    <label for="room-private" class="badge">Private Room</label> <br>
+                                    <input type="checkbox" class="custom-switch-input" id="room-private"
+                                           onclick="myFunction()">
+                                    <label class="custom-switch-btn" for="room-private"></label>
+                                </div>
+                                <div class="form-group m-2" style="display:none" id="room-check-pass">
+                                    <label for="room-pass" class="badge">Room Password</label>
+                                    <input type="password" class="form-control" id="room-pass" maxlength="16">
+                                </div>
+                                <div class="form-group m-2 custom-switch custom-switch-label-yesno">
+                                    <label for="room-giro" class="badge">'Giro Morto'?</label> <br>
+                                    <input type="checkbox" class="custom-switch-input" id="room-giro">
+                                    <label class="custom-switch-btn" for="room-giro"></label>
+                                </div>
+                                <div class="form-group m-2">
+                                    <label for="room-card-type" class="badge">Cards Type</label>
+                                    <select name="card-type" class="form-control" id="room-card-type">
+                                        <option value="siciliane">Siciliane</option>
+                                        <option value="napoletane">Napoletane</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <div class="form-group m-2">
+                                    <button class="btn btn-send" onclick="lobby.createRoom()" data-dismiss="modal">
+                                        Done
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <!--<hr>-->
+                <div class="rooms-area" id="rooms-area">
+                </div>
+
+            </div>
+            <!-- CHAT -->
+            <div class="col-3 chat-bg">
+                <div class=" align-items-center user-info-card">
+                    <h3 class="user-info-head"><span><i class="fa fa-id-badge"></i></span><b id="user-name">-</b>
+                    </h3>
+                    <p class="user-info-row" id="user-level">-</p>
+                    <p class="user-info-row" id="user-score">-</p>
+                    <p class="user-info-row" id="user-winloserate">-</p>
+
+                </div>
+                <div class="chat">
+                    <div class="chat-messages" id="chat"></div>
+                    <div class="input-group chat-input">
+                        <input type="text" maxlength="250" minlength="1" id="chat_input" class="form-control">
+                        <input type="button" class="btn chat-btn" id="chat_send" onclick="chat_send_message()" title="Invia"
+                               value="Invia">
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="myModal2" class="modal-giveup">
+    <!-- Modal content -->
+    <div class="modal-content-giveup">
+        <button class="close" id="close-btn" onclick="game.close()">&times;</button>
+        <p>Confirm to leave the game?</p>
+        <button id="quit-button" onclick="game.game_exit()">Quit</button>
+    </div>
+</div>
+
+<div id="myModal-refuse-kick" class="modal-giveup">
+    <!-- Modal content -->
+    <div class="modal-content-giveup">
+        <p>You have been kicked from this room!</p>
+        <button id="kick-button-close" onclick="reduce()">Close</button>
+    </div>
+</div>
+
+<script>
+    function reduce(){
+        document.getElementById('myModal-refuse-kick').style.display = 'none';
+    }
+</script>
+
+<div id="myModal-leave" class="modal-giveup">
+
+    <!-- Modal content -->
+    <div class="modal-content-giveup">
+        <p>A player leaved the room!</p>
+        <button id="quit-button1" onclick="game.finish()">Return lobby</button>
+    </div>
+
+</div>
+
+<div id="myModal3" class="modal-giveup">
+
+    <!-- Modal content -->
+    <div class="modal-content-giveup">
+        <div class="row" style="padding: 10px">
+            <font color="green">Green circle</font>: current player
+        </div>
+        <div class="row" style="padding: 10px">
+            <font color="red">Red circle</font>: round starter (first lap starts room's creator)
+        </div>
+        <div class="row" style="padding: 10px">
+            Coppola: caller"
+        </div>
+
+        <button id="got-it" onclick="game.close()">Got it</button>
+    </div>
+
+</div>
+
+<div id="myModalPass" class="modal-giveup">
+    <!-- Modal content -->
+    <div class="modal-content-giveup">
+        <label for="room-pass-input" class="badge">Password</label>
+        <input type="password" class="form-control" id="room-pass-input">
+        <br>
+        <button id="pass-close" class="btn btn-lg" onclick="document.getElementById('myModalPass').style.display = 'none'">Close</button>
+        <button id="pass-room" class="btn btn-lg" onclick="sendToServer.joinPrivateRoom()">Send</button>
+    </div>
+</div>
+
+<div id="myModalPassError" class="modal-giveup">
+    <!-- Modal content -->
+    <div class="modal-content-giveup">
+        Wrong password entry!
+        <br>
+        <br>
+        <button id="pass-wrong-close" class="btn btn-lg" onclick="document.getElementById('myModalPassError').style.display = 'none'">Close</button>
+    </div>
+</div>
+
+<script>
+    var input = document.getElementById("chat_input");
+    input.addEventListener("keyup", function(event) {
+        if (event.keyCode === 13) {
+            event.preventDefault();
+            document.getElementById("chat_send").click();
         }
-    </script>
+    });
 
-    <footer class="footer">
-        <p>Ismaele Benbachir - X81000345</p>
-    </footer>
+    var input2 = document.getElementById("chat_game_input");
+    input2.addEventListener("keyup", function(event) {
+        if (event.keyCode === 13) {
+            event.preventDefault();
+            document.getElementById("chat_game_send").click();
+        }
+    });
+
+    var input3 = document.getElementById("room-pass-input");
+    input3.addEventListener("keyup", function(event) {
+        if (event.keyCode === 13) {
+            event.preventDefault();
+            document.getElementById("pass-room").click();
+        }
+    });
+
+
+    function myFunction() {
+        let checkBox = document.getElementById("room-private");
+        let text = document.getElementById("room-check-pass");
+        if (checkBox.checked === true) {
+            text.style.display = "block";
+        } else {
+            text.style.display = "none";
+        }
+    }
+
+    function openTab(evt, tabName) {
+        var i, tabcontent, tablinks;
+        tabcontent = document.getElementsByClassName("tabcontent");
+
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+        }
+        tablinks = document.getElementsByClassName("tablinks");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+        document.getElementById(tabName).style.display = "block";
+        evt.currentTarget.className += " active";
+        if (tabName === 'chat-game-tab') {
+            let ci = document.getElementById('chat-button');
+            ci.classList.remove("prova2");
+        }
+    }
+</script>
+<footer class="footer">
+    <p>Ismaele Benbachir - X81000345</p>
+</footer>
+
+<script src="js/lib/jquery-3.3.1.js"></script>
+<script src="js/lib/popper.min.js"></script>
+<script src="js/lib/bootstrap.js"></script>
+<script src="js/lib/velocity.min.js"></script>
+<script src="js/lib/socket.io.js"></script>
+<script src="js/socket-config.js"></script>
+<script src="js/request-manager.js"></script>
+<script src="js/lobby-manager.js"></script>
+<script src="js/game-manager.js"></script>
+<script src="js/chat-lobby.js"></script>
+
+
+<script>
+    let aux = window.location.hostname;
+
+    let url = `http://${aux}:${80}/` + "request-user";
+
+    let xhr = new XMLHttpRequest();
+    xhr.open("POST", url, true);
+    xhr.setRequestHeader('Content-type', 'application/json; charset=utf-8');
+    xhr.onload = function () {
+        let response = JSON.parse(this.response);
+        socket.username = response.row.username;
+        document.getElementById('user-name').innerText = ` ${response.row.username}`;
+        document.getElementById('user-level').innerText = `Level: ${response.row.level}`;
+        document.getElementById('user-score').innerText = `Points: ${response.row.score}`;
+        document.getElementById('user-winloserate').innerText = `W: ${response.row.win} - L ${response.row.lose}`;
+        window.user = response.row;
+        if (response.idroom !== "0" && localStorage.getItem('roomId') !== "0") {
+            changeView('loading_screen');
+            setTimeout(() => {
+                console.log("Entrato in timeout");
+                socket.emit("reconnect-server", response);
+            }, 3000);
+        } else {
+            //changeView('loading_screen');
+            socket.emit('request-room-status', response.row.username);
+        }
+    };
+
+    xhr.send();
+
+</script>
+
+
 </body>
