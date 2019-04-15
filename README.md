@@ -94,8 +94,11 @@ Filippo Alfio Cicolò
 Alessandra Di Fiore
 
 ### Contacts
+
 Email: ismaelebnb93@hotmail.it
+
 Facebook: Ismaele Bnb
 
 ##### Last note
+
 In this version the code is not easy to read. I'll fix it in future updates.
