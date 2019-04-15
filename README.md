@@ -101,4 +101,4 @@ Facebook: Ismaele Bnb
 
 ##### Last note
 
-In this version the code is not easy to read. I'll fix it in future updates.
+The code is not easy to read. I'll fix it in future updates.
