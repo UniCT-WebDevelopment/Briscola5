@@ -15,7 +15,9 @@ package manager npm: '6.4.1';
 Tested on Linux 4.15.0-43-generic x86_64.
 
 From git repository:
+
 `$ git clone https://github.com/UniCT-WebDevelopment/Briscola5 name`
+
 Target directory is called 'name' (it can be omitted).
 To start server:
 
