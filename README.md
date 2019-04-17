@@ -78,12 +78,10 @@ The project consists of 2 main folders: client and server.
 - Single login per user;
 - At the second disconnection the game is closed;
 - Button for the game abandonment (no penalty for the moment);
- 
-## Cooperation
-
-Carmelo Buscemi
 
 ### With the help of
+
+Carmelo Buscemi
 
 Nunzio Mio
 
